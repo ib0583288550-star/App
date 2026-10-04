@@ -1,10 +1,7 @@
 name: Build APK
-# Automatic build trigger: keep this workflow running on every main push.
 on:
   push:
-    branches: [ "main" ]
-  pull_request:
-    branches: [ "main" ]
+    branches: ["main"]
   workflow_dispatch:
 
 jobs:
@@ -19,44 +16,16 @@ jobs:
         uses: actions/setup-java@v4
         with:
           distribution: temurin
-          java-version: '17'
+          java-version: "17"
       - name: Set up Gradle
         uses: gradle/actions/setup-gradle@v4
         with:
-          gradle-version: '8.7'
-      - name: Prepare template image assets
-        run: |
-          mkdir -p app/src/tikdosTemplate/assets
-          mkdir -p app/src/tikdosTemplate/res/drawable
-          python3 - <<'PY'
-          import struct, zlib
-          w=h=1024
-          raw=b''.join(b'\x00'+bytes([126,87,255,255])*w for _ in range(h))
-          def chunk(t,d):
-              return struct.pack(">I",len(d))+t+d+struct.pack(">I",zlib.crc32(t+d)&0xffffffff)
-          png=b'\x89PNG\r\n\x1a\n'+chunk(b'IHDR',struct.pack(">IIBBBBB",w,h,8,6,0,0,0))+chunk(b'IDAT',zlib.compress(raw,9))+chunk(b'IEND',b'')
-          open('app/src/tikdosTemplate/res/drawable/logo_tikdos.png','wb').write(png)
-          # Use the real Tik Dos home image uploaded to the main app assets.
-          import shutil
-          shutil.copy2('app/src/main/assets/tikdos_home.jpg', 'app/src/tikdosTemplate/assets/tikdos_home.jpg')
-          PY
-      - name: Build clean Tik Dos template
-        run: gradle assembleTikdosTemplateDebug --stacktrace
-      - name: Embed template into installer
-        run: |
-          mkdir -p app/src/installer/assets
-          cp app/build/outputs/apk/tikdosTemplate/debug/app-tikdosTemplate-debug.apk app/src/installer/assets/tikdos-template.apk
-      - name: Build installer
-        run: gradle assembleInstallerDebug --stacktrace
-      - name: Upload installer APK
+          gradle-version: "8.7"
+      - name: Build direct Tik Dos APK
+        run: gradle assembleDebug --stacktrace
+      - name: Upload direct APK
         uses: actions/upload-artifact@v4
         with:
-          name: tik-dos-installer-v1.5
-          path: app/build/outputs/apk/installer/debug/app-installer-debug.apk
-          if-no-files-found: error
-      - name: Upload clean template APK
-        uses: actions/upload-artifact@v4
-        with:
-          name: tik-dos-template-v1.5
-          path: app/build/outputs/apk/tikdosTemplate/debug/app-tikdosTemplate-debug.apk
+          name: tik-dos-direct-apk
+          path: app/build/outputs/apk/debug/app-debug.apk
           if-no-files-found: error
