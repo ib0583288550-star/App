@@ -277,15 +277,15 @@ public class MainActivity extends Activity implements TextureView.SurfaceTexture
     void share(){if(items.isEmpty())return;Uri u=items.get(pos);String mime=getContentResolver().getType(u);Intent i=new Intent(Intent.ACTION_SEND);i.setType(mime!=null?mime:"*/*");i.putExtra(Intent.EXTRA_STREAM,u);i.addFlags(Intent.FLAG_GRANT_READ_URI_PERMISSION);startActivity(Intent.createChooser(i,"שיתוף"));}
     void save(){
         if(items.isEmpty())return;Uri src=items.get(pos);String mime=getContentResolver().getType(src);if(mime==null){toast("סוג הקובץ לא זוהה");return;}
-        boolean vid=mime.startsWith("video/");String extension=vid?".mp4":".jpg";String name="תיק_דוס_"+System.currentTimeMillis()+extension;
+        boolean vid=mime.startsWith("video/");String extension=vid?".mp4":".jpg";String name="טיק_דוס_"+System.currentTimeMillis()+extension;
         ContentValues v=new ContentValues();v.put(MediaStore.MediaColumns.DISPLAY_NAME,name);v.put(MediaStore.MediaColumns.MIME_TYPE,mime);
-        v.put(MediaStore.MediaColumns.RELATIVE_PATH,vid?Environment.DIRECTORY_MOVIES+"/תיק דוס":Environment.DIRECTORY_PICTURES+"/תיק דוס");
+        v.put(MediaStore.MediaColumns.RELATIVE_PATH,vid?Environment.DIRECTORY_MOVIES+"/טיק דוס":Environment.DIRECTORY_PICTURES+"/טיק דוס");
         try{Uri out=getContentResolver().insert(vid?MediaStore.Video.Media.EXTERNAL_CONTENT_URI:MediaStore.Images.Media.EXTERNAL_CONTENT_URI,v);if(out==null)throw new IOException();
             InputStream in=getContentResolver().openInputStream(src);OutputStream os=getContentResolver().openOutputStream(out);if(in==null||os==null)throw new IOException();
             byte[] buffer=new byte[8192];int n;while((n=in.read(buffer))!=-1)os.write(buffer,0,n);in.close();os.close();toast("נשמר בגלריה");
         }catch(Exception e){toast("שמירה נכשלה");}
     }
-    void showAbout(){new AlertDialog.Builder(this).setTitle("אודות").setMessage("תיק דוס\n\nYB Apps").setPositiveButton("סגור",null).show();}
+    void showAbout(){new AlertDialog.Builder(this).setTitle("אודות").setMessage("טיק דוס\n\nYB Apps").setPositiveButton("סגור",null).show();}
     void toast(String s){Toast.makeText(this,s,Toast.LENGTH_SHORT).show();}
 
     @Override public void onSurfaceTextureAvailable(SurfaceTexture st,int w,int h){if(movie.getTag()!=null)prepareVideo((Uri)movie.getTag(),st);}
