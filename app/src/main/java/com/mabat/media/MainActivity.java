@@ -288,9 +288,17 @@ public class MainActivity extends Activity implements TextureView.SurfaceTexture
     }
 
     void loadHomeImage(){
-        String saved=prefs.getString("homeImageUri",null);
         ImageView homePhoto=findViewById(R.id.homePhoto);
-        if(saved!=null&&homePhoto!=null){try{homePhoto.setImageURI(Uri.parse(saved));homePhoto.setVisibility(View.VISIBLE);}catch(Exception ignored){}}
+        if(homePhoto==null)return;
+        // Standalone APKs created by the installer carry the chosen image inside the APK.
+        try{
+            InputStream in=getAssets().open("tikdos_home.jpg");
+            Bitmap b=BitmapFactory.decodeStream(in);
+            in.close();
+            if(b!=null){homePhoto.setImageBitmap(b);homePhoto.setVisibility(View.VISIBLE);return;}
+        }catch(Exception ignored){}
+        String saved=prefs.getString("homeImageUri",null);
+        if(saved!=null){try{homePhoto.setImageURI(Uri.parse(saved));homePhoto.setVisibility(View.VISIBLE);}catch(Exception ignored){}}
     }
 
     @Override protected void onActivityResult(int r,int c,Intent d){
