@@ -24,7 +24,7 @@ public class InstallerActivity extends Activity {
     }
 
     void buildUi(){
-        LinearLayout root=new LinearLayout(this);
+        ScrollView scroll=new ScrollView(this);\n        LinearLayout root=new LinearLayout(this);
         root.setOrientation(LinearLayout.VERTICAL);
         root.setGravity(Gravity.CENTER_HORIZONTAL);
         root.setPadding(28,32,28,28);
@@ -67,7 +67,7 @@ public class InstallerActivity extends Activity {
         build.setAllCaps(false);
         build.setEnabled(false);
         install=new Button(this);
-        install.setText("התקן את טיק דוס");
+        install.setText("⬇ התקן את טיק דוס");
         install.setAllCaps(false);
         install.setEnabled(false);
         LinearLayout.LayoutParams ip=new LinearLayout.LayoutParams(-1,56); ip.topMargin=10;
@@ -80,7 +80,7 @@ public class InstallerActivity extends Activity {
         foot.setTextColor(0xFF777784); foot.setGravity(Gravity.CENTER); foot.setPadding(0,20,0,0);
         root.addView(foot,new LinearLayout.LayoutParams(-1,-2));
 
-        setContentView(root);
+        scroll.addView(root);\n        setContentView(scroll);
         choose.setOnClickListener(v->pickImage());
         build.setOnClickListener(v->createApk());
         install.setOnClickListener(v->{ if(generatedApk!=null && generatedApk.exists()) installApk(generatedApk); else Toast.makeText(this,"קודם צור את ה־APK",Toast.LENGTH_SHORT).show(); });
@@ -143,7 +143,7 @@ public class InstallerActivity extends Activity {
             i.addFlags(Intent.FLAG_GRANT_READ_URI_PERMISSION|Intent.FLAG_ACTIVITY_NEW_TASK);
             startActivity(i);
         }catch(Exception e){
-            new AlertDialog.Builder(this).setTitle("ה־APK נוצר").setMessage("הקובץ מוכן. לחץ על כפתור התקן את טיק דוס כדי לפתוח את ההתקנה.").setPositiveButton("סגור",null).show();
+            new AlertDialog.Builder(this).setTitle("לא ניתן לפתוח את ההתקנה").setMessage(e.getMessage()==null?e.toString():e.getMessage()).setPositiveButton("סגור",null).show();
         }
     }
 }
