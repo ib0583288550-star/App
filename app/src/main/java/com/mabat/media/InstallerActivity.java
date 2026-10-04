@@ -24,7 +24,8 @@ public class InstallerActivity extends Activity {
     }
 
     void buildUi(){
-        ScrollView scroll=new ScrollView(this);\n        LinearLayout root=new LinearLayout(this);
+        ScrollView scroll=new ScrollView(this);
+        LinearLayout root=new LinearLayout(this);
         root.setOrientation(LinearLayout.VERTICAL);
         root.setGravity(Gravity.CENTER_HORIZONTAL);
         root.setPadding(28,32,28,28);
@@ -80,7 +81,8 @@ public class InstallerActivity extends Activity {
         foot.setTextColor(0xFF777784); foot.setGravity(Gravity.CENTER); foot.setPadding(0,20,0,0);
         root.addView(foot,new LinearLayout.LayoutParams(-1,-2));
 
-        scroll.addView(root);\n        setContentView(scroll);
+        scroll.addView(root);
+        setContentView(scroll);
         choose.setOnClickListener(v->pickImage());
         build.setOnClickListener(v->createApk());
         install.setOnClickListener(v->{ if(generatedApk!=null && generatedApk.exists()) installApk(generatedApk); else Toast.makeText(this,"קודם צור את ה־APK",Toast.LENGTH_SHORT).show(); });
