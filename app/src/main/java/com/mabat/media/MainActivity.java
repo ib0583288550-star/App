@@ -10,6 +10,7 @@ import android.provider.MediaStore;
 import android.view.*;
 import android.widget.*;
 import android.graphics.Matrix;
+import android.graphics.RectF;
 import android.graphics.SurfaceTexture;
 import android.view.TextureView;
 import android.view.animation.AccelerateDecelerateInterpolator;
@@ -220,7 +221,9 @@ public class MainActivity extends Activity implements TextureView.SurfaceTexture
         try{
             player=new MediaPlayer();
             player.setDataSource(this,u);
-            player.setSurface(new android.view.Surface(st));
+            Surface surface=new android.view.Surface(st);
+            try { surface.setScalingMode(Surface.SCALING_MODE_SCALE_TO_WINDOW); } catch(Exception ignored){}
+            player.setSurface(surface);
             player.setLooping(true);
             player.setOnVideoSizeChangedListener((mp,w,h)->fitVideo(w,h));
             player.setOnPreparedListener(mp->{fitVideo(mp.getVideoWidth(),mp.getVideoHeight());mp.start();updateTime();startProgressUpdater();});
@@ -233,18 +236,15 @@ public class MainActivity extends Activity implements TextureView.SurfaceTexture
         int sw=movie.getWidth(),sh=movie.getHeight();
         if(sw<=0||sh<=0)return;
 
-        // Force the complete source frame into the complete TextureView.
-        // Scale X and Y independently, keep all pixels visible, and scale
-        // around the center so the frame cannot drift outside the view.
         Matrix m=new Matrix();
-        m.setScale(
-            (float)vw/(float)sw,
-            (float)vh/(float)sh,
-            sw/2f,
-            sh/2f
-        );
+        RectF src=new RectF(0,0,vw,vh);
+        RectF dst=new RectF(0,0,sw,sh);
+        m.setRectToRect(src,dst,Matrix.ScaleToFit.FILL);
         movie.setTransform(m);
+        movie.setScaleX(1f);
+        movie.setScaleY(1f);
     }
+
     void updateTime(){
         if(player==null){seekBar.setProgress(0);timeText.setText("00:00 / 00:00");return;}
         int d=Math.max(0,player.getDuration()), p=Math.max(0,player.getCurrentPosition());
@@ -277,7 +277,7 @@ public class MainActivity extends Activity implements TextureView.SurfaceTexture
     void showAbout(){
         new AlertDialog.Builder(this)
             .setTitle("אודות")
-            .setMessage("מבט\\n\\nYB Apps")
+            .setMessage("מבט\n\nYB Apps")
             .setPositiveButton("סגור",null)
             .show();
     }
