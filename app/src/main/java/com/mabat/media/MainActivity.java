@@ -186,7 +186,7 @@ public class MainActivity extends Activity implements TextureView.SurfaceTexture
             if(movie.isAvailable()) prepareVideo(u,movie.getSurfaceTexture());
             speed.setVisibility(View.GONE);
         } else picture.setImageURI(u);
-        like.setText(likes.getBoolean(u.toString(),false)?"♥":"♡");
+        like.setText(""); like.setAlpha(likes.getBoolean(u.toString(),false)?1f:0.65f);
         count.setText((pos+1)+" / "+items.size());
     }
 
@@ -214,7 +214,7 @@ public class MainActivity extends Activity implements TextureView.SurfaceTexture
 
     void next(){if(!items.isEmpty()){pos=(pos+1)%items.size();render();}}
     void prev(){if(!items.isEmpty()){pos=(pos-1+items.size())%items.size();render();}}
-    void toggleLike(){if(items.isEmpty())return;Uri u=items.get(pos);boolean n=!likes.getBoolean(u.toString(),false);likes.edit().putBoolean(u.toString(),n).apply();like.setText(n?"♥":"♡");}
+    void toggleLike(){if(items.isEmpty())return;Uri u=items.get(pos);boolean n=!likes.getBoolean(u.toString(),false);likes.edit().putBoolean(u.toString(),n).apply();like.setText(""); like.setAlpha(n?1f:0.65f);}
     void share(){if(items.isEmpty())return;Uri u=items.get(pos);String mime=getContentResolver().getType(u);Intent i=new Intent(Intent.ACTION_SEND);i.setType(mime!=null?mime:"*/*");i.putExtra(Intent.EXTRA_STREAM,u);i.addFlags(Intent.FLAG_GRANT_READ_URI_PERMISSION);startActivity(Intent.createChooser(i,"שיתוף"));}
     void save(){
         if(items.isEmpty())return;Uri src=items.get(pos);String mime=getContentResolver().getType(src);if(mime==null){toast("סוג הקובץ לא זוהה");return;}
