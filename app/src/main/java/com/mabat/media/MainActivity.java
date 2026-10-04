@@ -229,11 +229,16 @@ public class MainActivity extends Activity implements TextureView.SurfaceTexture
         int sw=movie.getWidth(),sh=movie.getHeight();
         if(sw<=0||sh<=0)return;
 
-        // Fill the entire screen with the complete video frame.
-        // No crop and no black bars: the source is stretched independently
-        // in width and height to exactly match the TextureView.
+        // Force the complete source frame into the complete TextureView.
+        // Scale X and Y independently, keep all pixels visible, and scale
+        // around the center so the frame cannot drift outside the view.
         Matrix m=new Matrix();
-        m.setScale((float)sw/(float)vw,(float)sh/(float)vh);
+        m.setScale(
+            (float)sw/(float)vw,
+            (float)sh/(float)vh,
+            sw/2f,
+            sh/2f
+        );
         movie.setTransform(m);
     }
     void updateTime(){
