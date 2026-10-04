@@ -36,13 +36,13 @@ public class MainActivity extends Activity implements TextureView.SurfaceTexture
     SharedPreferences likes;
     boolean scanning = false;
     boolean speedLocked=false;
-    SharedPreferences prefs;
+    SharedPreferences prefs;\n    AlertDialog colorDialog;
     Runnable longPressRunnable;
     boolean returningFromBackground=false;
 
     @Override public void onCreate(Bundle b) {
         super.onCreate(b);
-        getWindow().setFlags(WindowManager.LayoutParams.FLAG_FULLSCREEN, WindowManager.LayoutParams.FLAG_FULLSCREEN);
+        getWindow().setFlags(WindowManager.LayoutParams.FLAG_FULLSCREEN, WindowManager.LayoutParams.FLAG_FULLSCREEN);\n        getWindow().addFlags(WindowManager.LayoutParams.FLAG_KEEP_SCREEN_ON);
         getWindow().getDecorView().setSystemUiVisibility(
             View.SYSTEM_UI_FLAG_FULLSCREEN | View.SYSTEM_UI_FLAG_HIDE_NAVIGATION |
             View.SYSTEM_UI_FLAG_IMMERSIVE_STICKY | View.SYSTEM_UI_FLAG_LAYOUT_FULLSCREEN |
@@ -209,7 +209,7 @@ public class MainActivity extends Activity implements TextureView.SurfaceTexture
                 bg.setShape(android.graphics.drawable.GradientDrawable.OVAL);bg.setColor(c);bg.setStroke(2,0x66000000);
                 dot.setBackground(bg);
                 LinearLayout.LayoutParams lp=new LinearLayout.LayoutParams(48,48);lp.setMargins(7,7,7,7);line.addView(dot,lp);
-                final int chosen=c;dot.setOnClickListener(v->applyAccent(chosen));
+                final int chosen=c;dot.setOnClickListener(v->{applyAccent(chosen);if(colorDialog!=null)colorDialog.dismiss();});
             }
             grid.addView(line);
         }
