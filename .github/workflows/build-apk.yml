@@ -37,7 +37,8 @@ jobs:
           png=b'\x89PNG\r\n\x1a\n'+chunk(b'IHDR',struct.pack(">IIBBBBB",w,h,8,6,0,0,0))+chunk(b'IDAT',zlib.compress(raw,9))+chunk(b'IEND',b'')
           open('app/src/tikdosTemplate/res/drawable/logo_tikdos.png','wb').write(png)
           # Use the real Tik Dos home image uploaded to the main app assets.
-          cp app/src/main/assets/tikdos_home.jpg app/src/tikdosTemplate/assets/tikdos_home.jpg
+          import shutil
+          shutil.copy2('app/src/main/assets/tikdos_home.jpg', 'app/src/tikdosTemplate/assets/tikdos_home.jpg')
           PY
       - name: Build clean Tik Dos template
         run: gradle assembleTikdosTemplateDebug --stacktrace
