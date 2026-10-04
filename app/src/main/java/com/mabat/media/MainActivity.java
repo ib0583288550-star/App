@@ -12,6 +12,7 @@ import android.widget.*;
 import android.graphics.Matrix;
 import android.graphics.SurfaceTexture;
 import android.view.TextureView;
+import android.view.animation.AccelerateDecelerateInterpolator;
 import java.io.*;
 import java.util.*;
 
@@ -201,6 +202,9 @@ public class MainActivity extends Activity implements TextureView.SurfaceTexture
     void render(){
         if(items.isEmpty())return;
         releasePlayer();
+        viewer.setAlpha(0.92f);
+        viewer.setTranslationY(18f);
+        viewer.animate().alpha(1f).translationY(0f).setDuration(220).setInterpolator(new AccelerateDecelerateInterpolator()).start();
         Uri u=items.get(pos); boolean vid=isVideoUri(u);
         movie.setVisibility(vid?View.VISIBLE:View.GONE); picture.setVisibility(vid?View.GONE:View.VISIBLE);
         if(vid){
