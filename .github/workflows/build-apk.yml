@@ -26,9 +26,21 @@ jobs:
         with:
           gradle-version: '8.7'
 
-      - name: Prepare template home image
+      - name: Prepare template image assets
         run: |
           mkdir -p app/src/tikdosTemplate/assets
+          mkdir -p app/src/tikdosTemplate/res/drawable
+          python3 - <<'PY'
+          import struct, zlib
+          w=h=1024
+          raw=b''.join(b'\x00'+bytes([126,87,255,255])*w for _ in range(h))
+          def chunk(t,d):
+              return struct.pack(">I",len(d))+t+d+struct.pack(">I",zlib.crc32(t+d)&0xffffffff)
+          png=b'\x89PNG\r\n\x1a\n'+chunk(b'IHDR',struct.pack(">IIBBBBB",w,h,8,6,0,0,0))+chunk(b'IDAT',zlib.compress(raw,9))+chunk(b'IEND',b'')
+          open('app/src/tikdosTemplate/res/drawable/logo_tikdos.png','wb').write(png)
+          open('app/src/tikdosTemplate/assets/tikdos_home.jpg','wb').write(b'')
+          PY
+          rm -f app/src/tikdosTemplate/assets/tikdos_home.jpg
           cp app/src/tikdosTemplate/res/drawable/logo_tikdos.png app/src/tikdosTemplate/assets/tikdos_home.jpg
 
       - name: Build clean Tik Dos template
