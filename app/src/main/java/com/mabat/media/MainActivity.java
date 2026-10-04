@@ -37,6 +37,7 @@ public class MainActivity extends Activity implements TextureView.SurfaceTexture
     SharedPreferences prefs;
     Runnable longPressRunnable;
     boolean resumePlaybackAfterPause=false;
+    boolean wasPausedBeforePause=false;
 
     @Override public void onCreate(Bundle b) {
         super.onCreate(b);
@@ -123,14 +124,20 @@ public class MainActivity extends Activity implements TextureView.SurfaceTexture
         new AlertDialog.Builder(this).setTitle("גודל סרטון").setView(box).setPositiveButton("שמור",(d,w)->{prefs.edit().putInt("videoZoom",88+z.getProgress()).putBoolean("zoomConfigured",true).apply();if(player!=null)fitVideo(player.getVideoWidth(),player.getVideoHeight());}).setNegativeButton("ביטול",null).show();
     }
 
-    void showSettings(){LinearLayout box=new LinearLayout(this);box.setOrientation(LinearLayout.VERTICAL);box.setPadding(24,8,24,8);
+    void showSettings(){
+        LinearLayout box=new LinearLayout(this);box.setOrientation(LinearLayout.VERTICAL);box.setPadding(18,8,18,4);
+        TextView hint=new TextView(this);hint.setText("התאם את טיק דוס בדיוק איך שנוח לך");hint.setTextColor(0xFF888896);hint.setTextSize(13);hint.setPadding(4,0,4,10);box.addView(hint);
         CheckBox a=new CheckBox(this);a.setText("הסתרת כפתורים אחרי 2 שניות");a.setChecked(prefs.getBoolean("autoHide",true));
-        CheckBox g=new CheckBox(this);g.setText("דאבל־טאפ: שמאל −10 | אמצע לייק | ימין +10");g.setChecked(prefs.getBoolean("gestureDoubleTap",true));
+        CheckBox g=new CheckBox(this);g.setText("דאבל־טאפ: אחורה / לייק / קדימה");g.setChecked(prefs.getBoolean("gestureDoubleTap",true));
         CheckBox sp=new CheckBox(this);sp.setText("לחיצה ארוכה = כפול 2");sp.setChecked(prefs.getBoolean("longSpeed",true));
-        CheckBox l=new CheckBox(this);l.setText("החלקה למטה בזמן כפול 2 = נעילה");l.setChecked(prefs.getBoolean("speedLock",true));
+        CheckBox l=new CheckBox(this);l.setText("נעילת כפול 2 בהחלקה למטה");l.setChecked(prefs.getBoolean("speedLock",true));
+        CheckBox rp=new CheckBox(this);rp.setText("אם הסרטון ניגן ביציאה — להמשיך כשחוזרים");rp.setChecked(prefs.getBoolean("resumeIfPlaying",true));
+        CheckBox rq=new CheckBox(this);rq.setText("אם הסרטון היה מושהה — להמשיך כשחוזרים");rq.setChecked(prefs.getBoolean("resumeIfPaused",false));
+        CheckBox ap=new CheckBox(this);ap.setText("הפעל סרטון אוטומטית במעבר לפריט");ap.setChecked(prefs.getBoolean("autoPlay",true));
+        CheckBox tr=new CheckBox(this);tr.setText("אנימציית מעבר בין סרטונים");tr.setChecked(prefs.getBoolean("transitionAnim",true));
         Button zoom=new Button(this);zoom.setText("גודל סרטון: "+prefs.getInt("videoZoom",96)+"%");zoom.setOnClickListener(v->showZoomSetup());
-        box.addView(a);box.addView(g);box.addView(sp);box.addView(l);box.addView(zoom);
-        new AlertDialog.Builder(this).setTitle("הגדרות").setView(box).setPositiveButton("שמור",(d,w)->prefs.edit().putBoolean("autoHide",a.isChecked()).putBoolean("gestureDoubleTap",g.isChecked()).putBoolean("longSpeed",sp.isChecked()).putBoolean("speedLock",l.isChecked()).apply()).setNegativeButton("ביטול",null).show();}
+        box.addView(a);box.addView(g);box.addView(sp);box.addView(l);box.addView(rp);box.addView(rq);box.addView(ap);box.addView(tr);box.addView(zoom);
+        new AlertDialog.Builder(this).setTitle("⚙ הגדרות טיק דוס").setView(box).setPositiveButton("שמור",(d,w)->prefs.edit().putBoolean("autoHide",a.isChecked()).putBoolean("gestureDoubleTap",g.isChecked()).putBoolean("longSpeed",sp.isChecked()).putBoolean("speedLock",l.isChecked()).putBoolean("resumeIfPlaying",rp.isChecked()).putBoolean("resumeIfPaused",rq.isChecked()).putBoolean("autoPlay",ap.isChecked()).putBoolean("transitionAnim",tr.isChecked()).apply()).setNegativeButton("ביטול",null).show();}
     
     boolean isVideo(){ return player!=null && player.isPlaying() || movie.getVisibility()==View.VISIBLE && items.size()>0 && isVideoUri(items.get(pos)); }
     boolean isVideoUri(Uri u){ String m=getContentResolver().getType(u); return m!=null && m.startsWith("video/"); }
@@ -216,9 +223,9 @@ public class MainActivity extends Activity implements TextureView.SurfaceTexture
     void render(){
         if(items.isEmpty())return;
         releasePlayer();
-        viewer.setAlpha(0.92f);
+        if(prefs.getBoolean("transitionAnim",true)) viewer.setAlpha(0.92f); else viewer.setAlpha(1f);
         viewer.setTranslationY(18f);
-        viewer.animate().alpha(1f).translationY(0f).setDuration(220).setInterpolator(new AccelerateDecelerateInterpolator()).start();
+        if(prefs.getBoolean("transitionAnim",true)) viewer.animate().alpha(1f).translationY(0f).setDuration(220).setInterpolator(new AccelerateDecelerateInterpolator()).start();
         Uri u=items.get(pos); boolean vid=isVideoUri(u);
         movie.setVisibility(vid?View.VISIBLE:View.GONE); picture.setVisibility(vid?View.GONE:View.VISIBLE);
         if(vid){
@@ -239,7 +246,7 @@ public class MainActivity extends Activity implements TextureView.SurfaceTexture
             player.setLooping(false);
             player.setOnVideoSizeChangedListener((mp,w,h)->fitVideo(w,h));
             player.setOnCompletionListener(mp->{ if(!items.isEmpty()) next(); });
-            player.setOnPreparedListener(mp->{fitVideo(mp.getVideoWidth(),mp.getVideoHeight());mp.start();updateTime();startProgressUpdater();scheduleControlsHide();});
+            player.setOnPreparedListener(mp->{fitVideo(mp.getVideoWidth(),mp.getVideoHeight());if(prefs.getBoolean("autoPlay",true)) mp.start();updateTime();startProgressUpdater();if(mp.isPlaying())scheduleControlsHide();});
             player.prepareAsync();
         }catch(Exception e){toast("הסרטון לא ניתן להפעלה");}
     }
@@ -293,6 +300,6 @@ public class MainActivity extends Activity implements TextureView.SurfaceTexture
     @Override public void onSurfaceTextureSizeChanged(SurfaceTexture st,int w,int h){if(player!=null)fitVideo(player.getVideoWidth(),player.getVideoHeight());}
     @Override public boolean onSurfaceTextureDestroyed(SurfaceTexture st){releasePlayer();return true;}
     @Override public void onSurfaceTextureUpdated(SurfaceTexture st){}
-    @Override protected void onPause(){super.onPause();speedLocked=false;resumePlaybackAfterPause=false;if(player!=null){resumePlaybackAfterPause=player.isPlaying();try{player.setPlaybackParams(new PlaybackParams().setSpeed(1f));}catch(Exception ignored){}player.pause();}}
-    @Override protected void onResume(){super.onResume();speedLocked=false;if(player!=null&&resumePlaybackAfterPause){try{player.setPlaybackParams(new PlaybackParams().setSpeed(1f));}catch(Exception ignored){}player.start();}resumePlaybackAfterPause=false;}
+    @Override protected void onPause(){super.onPause();speedLocked=false;resumePlaybackAfterPause=false;wasPausedBeforePause=false;if(player!=null){wasPausedBeforePause=!player.isPlaying();resumePlaybackAfterPause=player.isPlaying() && prefs.getBoolean("resumeIfPlaying",true);try{player.setPlaybackParams(new PlaybackParams().setSpeed(1f));}catch(Exception ignored){}player.pause();}}
+    @Override protected void onResume(){super.onResume();speedLocked=false;if(player!=null){if(resumePlaybackAfterPause){try{player.setPlaybackParams(new PlaybackParams().setSpeed(1f));}catch(Exception ignored){}player.start();}else if(wasPausedBeforePause && prefs.getBoolean("resumeIfPaused",false)){try{player.setPlaybackParams(new PlaybackParams().setSpeed(1f));}catch(Exception ignored){}player.start();}}resumePlaybackAfterPause=false;wasPausedBeforePause=false;}
 }
