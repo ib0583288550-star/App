@@ -14,6 +14,12 @@ android {
         versionName 'v1.5'
     }
 
+    packaging {
+        resources {
+            excludes += ['META-INF/versions/9/OSGI-INF/MANIFEST.MF']
+        }
+    }
+
     flavorDimensions "mode"
     productFlavors {
         installer {
