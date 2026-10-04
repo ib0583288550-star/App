@@ -35,6 +35,7 @@ public class MainActivity extends Activity implements TextureView.SurfaceTexture
     boolean scanning = false;
     boolean speedLocked=false;
     SharedPreferences prefs;
+    Runnable longPressRunnable;
 
     @Override public void onCreate(Bundle b) {
         super.onCreate(b);
@@ -79,10 +80,10 @@ public class MainActivity extends Activity implements TextureView.SurfaceTexture
 
     boolean handleTouch(MotionEvent e) {
         if(e.getAction()==MotionEvent.ACTION_DOWN){downX=e.getX();downY=e.getY();downTime=System.currentTimeMillis();moved=false;longPressing=false;speedLocked=false;
-            if(isVideo()&&prefs.getBoolean("longSpeed",true))handler.postDelayed(()->{if(!moved&&isVideo()){longPressing=true;setSpeed(2f);}},320);return true;}
+            if(isVideo()&&prefs.getBoolean("longSpeed",true)){ longPressRunnable=()->{if(!moved&&isVideo()){longPressing=true;setSpeed(2f);}}; handler.postDelayed(longPressRunnable,320); } return true;}
         if(e.getAction()==MotionEvent.ACTION_MOVE){if(Math.abs(e.getX()-downX)>35||Math.abs(e.getY()-downY)>35)moved=true;
             if(longPressing&&prefs.getBoolean("speedLock",true)&&e.getY()-downY>90){speedLocked=true;speed.setText("כפול 2 • נעול");speed.setVisibility(View.VISIBLE);}return true;}
-        if(e.getAction()==MotionEvent.ACTION_UP){if(longPressing){if(!speedLocked)setSpeed(1f);longPressing=false;scheduleControlsHide();return true;}
+        if(e.getAction()==MotionEvent.ACTION_UP){if(longPressRunnable!=null){handler.removeCallbacks(longPressRunnable);longPressRunnable=null;}if(longPressing){if(!speedLocked)setSpeed(1f);longPressing=false;scheduleControlsHide();return true;}
             if(moved){float d=e.getY()-downY;if(Math.abs(d)>90){if(d<0)next();else prev();}return true;}
             if(System.currentTimeMillis()-downTime<300){if(doubleTapPending){doubleTapPending=false;
                 if(prefs.getBoolean("gestureDoubleTap",true)){float third=viewer.getWidth()/3f,x=e.getX();if(x<third)seekBy(-10000);else if(x>third*2f)seekBy(10000);else toggleLike();}else togglePlayback();}
@@ -216,7 +217,8 @@ public class MainActivity extends Activity implements TextureView.SurfaceTexture
         Matrix m=new Matrix();
         float sx=(float)sw/(float)vw;
         float sy=(float)sh/(float)vh;
-        m.setScale(sx,sy,sw/2f,sh/2f);
+        // TextureView transform uses view-space scale: enlarge the texture to exactly fill the screen.
+        m.setScale((float)vw/(float)sw,(float)vh/(float)sh,sw/2f,sh/2f);
         movie.setTransform(m);
     }
 
