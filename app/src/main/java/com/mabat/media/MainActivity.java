@@ -34,6 +34,14 @@ public class MainActivity extends Activity implements TextureView.SurfaceTexture
     @Override public void onCreate(Bundle b) {
         super.onCreate(b);
         getWindow().setFlags(WindowManager.LayoutParams.FLAG_FULLSCREEN, WindowManager.LayoutParams.FLAG_FULLSCREEN);
+        getWindow().getDecorView().setSystemUiVisibility(
+            View.SYSTEM_UI_FLAG_FULLSCREEN
+            | View.SYSTEM_UI_FLAG_HIDE_NAVIGATION
+            | View.SYSTEM_UI_FLAG_IMMERSIVE_STICKY
+            | View.SYSTEM_UI_FLAG_LAYOUT_FULLSCREEN
+            | View.SYSTEM_UI_FLAG_LAYOUT_HIDE_NAVIGATION
+            | View.SYSTEM_UI_FLAG_LAYOUT_STABLE
+        );
         setContentView(R.layout.activity_main);
 
         home=findViewById(R.id.home); viewer=findViewById(R.id.viewer);
@@ -209,8 +217,11 @@ public class MainActivity extends Activity implements TextureView.SurfaceTexture
         // the whole viewer, preserving its aspect ratio. This removes the black
         // frame/empty margins; only unavoidable edge cropping remains.
         float scale=Math.max((float)sw/vw,(float)sh/vh);
-        float dx=(sw-vw*scale)/2f,dy=(sh-vh*scale)/2f;
-        Matrix m=new Matrix();m.setScale(scale,scale,sw/2f,sh/2f);m.postTranslate(dx,dy);movie.setTransform(m);
+        // Scale around the exact center of the TextureView. Do not add a second
+        // translation: scaling around center already keeps the video centered.
+        Matrix m=new Matrix();
+        m.setScale(scale,scale,sw/2f,sh/2f);
+        movie.setTransform(m);
     }
 
     void releasePlayer(){if(player!=null){try{player.stop();}catch(Exception ignored){}player.release();player=null;}}
