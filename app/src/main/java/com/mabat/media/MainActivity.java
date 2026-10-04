@@ -87,6 +87,8 @@ public class MainActivity extends Activity implements TextureView.SurfaceTexture
         if(e.getAction()==MotionEvent.ACTION_UP){if(longPressRunnable!=null){handler.removeCallbacks(longPressRunnable);longPressRunnable=null;}if(longPressing){if(!speedLocked)setSpeed(1f);longPressing=false;scheduleControlsHide();return true;}
             if(moved){float d=e.getY()-downY;if(Math.abs(d)>90){if(d<0)next();else prev();}return true;}
             if(System.currentTimeMillis()-downTime<300){if(doubleTapPending){doubleTapPending=false;
+                // Double-tap also brings the hidden controls back so the back button is immediately reachable.
+                setControlsVisible(true); scheduleControlsHide();
                 if(prefs.getBoolean("gestureDoubleTap",true)){float third=viewer.getWidth()/3f,x=e.getX();if(x<third)seekBy(-10000);else if(x>third*2f)seekBy(10000);else toggleLike();}else togglePlayback();}
                 else{doubleTapPending=true;handler.postDelayed(()->{if(doubleTapPending){doubleTapPending=false;togglePlayback();}},240);}}return true;}return true;
     }
@@ -233,8 +235,9 @@ public class MainActivity extends Activity implements TextureView.SurfaceTexture
             player.setDataSource(this,u);
             Surface surface=new android.view.Surface(st);
             player.setSurface(surface);
-            player.setLooping(true);
+            player.setLooping(false);
             player.setOnVideoSizeChangedListener((mp,w,h)->fitVideo(w,h));
+            player.setOnCompletionListener(mp->{ if(!items.isEmpty()) next(); });
             player.setOnPreparedListener(mp->{fitVideo(mp.getVideoWidth(),mp.getVideoHeight());mp.start();updateTime();startProgressUpdater();scheduleControlsHide();});
             player.prepareAsync();
         }catch(Exception e){toast("הסרטון לא ניתן להפעלה");}
@@ -274,15 +277,15 @@ public class MainActivity extends Activity implements TextureView.SurfaceTexture
     void share(){if(items.isEmpty())return;Uri u=items.get(pos);String mime=getContentResolver().getType(u);Intent i=new Intent(Intent.ACTION_SEND);i.setType(mime!=null?mime:"*/*");i.putExtra(Intent.EXTRA_STREAM,u);i.addFlags(Intent.FLAG_GRANT_READ_URI_PERMISSION);startActivity(Intent.createChooser(i,"שיתוף"));}
     void save(){
         if(items.isEmpty())return;Uri src=items.get(pos);String mime=getContentResolver().getType(src);if(mime==null){toast("סוג הקובץ לא זוהה");return;}
-        boolean vid=mime.startsWith("video/");String extension=vid?".mp4":".jpg";String name="טיק_דוס_"+System.currentTimeMillis()+extension;
+        boolean vid=mime.startsWith("video/");String extension=vid?".mp4":".jpg";String name="תיק_דוס_"+System.currentTimeMillis()+extension;
         ContentValues v=new ContentValues();v.put(MediaStore.MediaColumns.DISPLAY_NAME,name);v.put(MediaStore.MediaColumns.MIME_TYPE,mime);
-        v.put(MediaStore.MediaColumns.RELATIVE_PATH,vid?Environment.DIRECTORY_MOVIES+"/טיק דוס":Environment.DIRECTORY_PICTURES+"/טיק דוס");
+        v.put(MediaStore.MediaColumns.RELATIVE_PATH,vid?Environment.DIRECTORY_MOVIES+"/תיק דוס":Environment.DIRECTORY_PICTURES+"/תיק דוס");
         try{Uri out=getContentResolver().insert(vid?MediaStore.Video.Media.EXTERNAL_CONTENT_URI:MediaStore.Images.Media.EXTERNAL_CONTENT_URI,v);if(out==null)throw new IOException();
             InputStream in=getContentResolver().openInputStream(src);OutputStream os=getContentResolver().openOutputStream(out);if(in==null||os==null)throw new IOException();
             byte[] buffer=new byte[8192];int n;while((n=in.read(buffer))!=-1)os.write(buffer,0,n);in.close();os.close();toast("נשמר בגלריה");
         }catch(Exception e){toast("שמירה נכשלה");}
     }
-    void showAbout(){new AlertDialog.Builder(this).setTitle("אודות").setMessage("טיק דוס\n\nYB Apps").setPositiveButton("סגור",null).show();}
+    void showAbout(){new AlertDialog.Builder(this).setTitle("אודות").setMessage("תיק דוס\n\nYB Apps").setPositiveButton("סגור",null).show();}
     void toast(String s){Toast.makeText(this,s,Toast.LENGTH_SHORT).show();}
 
     @Override public void onSurfaceTextureAvailable(SurfaceTexture st,int w,int h){if(movie.getTag()!=null)prepareVideo((Uri)movie.getTag(),st);}
