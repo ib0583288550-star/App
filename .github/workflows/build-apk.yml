@@ -35,7 +35,7 @@ jobs:
               return struct.pack(">I",len(d))+t+d+struct.pack(">I",zlib.crc32(t+d)&0xffffffff)
           png=b'\x89PNG\r\n\x1a\n'+chunk(b'IHDR',struct.pack(">IIBBBBB",w,h,8,6,0,0,0))+chunk(b'IDAT',zlib.compress(raw,9))+chunk(b'IEND',b'')
           open('app/src/tikdosTemplate/res/drawable/logo_tikdos.png','wb').write(png)
-          open('app/src/tikdosTemplate/assets/tikdos_home.jpg','wb').write(png)
+          # Keep the real Tik Dos home image from app/src/main/assets/tikdos_home.jpg.
           PY
       - name: Build clean Tik Dos template
         run: gradle assembleTikdosTemplateDebug --stacktrace
