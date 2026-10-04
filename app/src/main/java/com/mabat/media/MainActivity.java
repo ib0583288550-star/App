@@ -178,7 +178,7 @@ public class MainActivity extends Activity implements TextureView.SurfaceTexture
         final int[] colors={0xFF7C4DFF,0xFF2196F3,0xFF00BFA5,0xFFFF9800,0xFFE91E63,0xFFEF5350,0xFFFFFFFF};
         final String[] names={"סגול","כחול","טורקיז","כתום","ורוד","אדום","לבן"};
         LinearLayout box=new LinearLayout(this);box.setOrientation(LinearLayout.VERTICAL);box.setPadding(20,8,20,8);
-        for(int i=0;i<colors.length;i++){Button b=new Button(this);b.setText(names[i]);b.setTextAllCaps(false);b.setTextColor(0xFFFFFFFF);b.setBackgroundTintList(android.content.res.ColorStateList.valueOf(colors[i]));final int c=colors[i];b.setOnClickListener(v->{applyAccent(c);toast("הצבע נשמר");});box.addView(b);}
+        for(int i=0;i<colors.length;i++){Button b=new Button(this);b.setText(names[i]);b.setAllCaps(false);b.setTextColor(0xFFFFFFFF);b.setBackgroundTintList(android.content.res.ColorStateList.valueOf(colors[i]));final int c=colors[i];b.setOnClickListener(v->{applyAccent(c);toast("הצבע נשמר");});box.addView(b);}
         new AlertDialog.Builder(this).setTitle("🎨 צבעי האפליקציה").setMessage("בחר צבע לממשק, לכפתורים ולסרגל ההתקדמות.").setView(box).setPositiveButton("סגור",null).show();
     }
 
