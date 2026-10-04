@@ -10,6 +10,7 @@ import android.provider.MediaStore;
 import android.view.*;
 import android.widget.*;
 import android.graphics.Matrix;
+import android.graphics.*;
 import android.graphics.SurfaceTexture;
 import android.view.TextureView;
 import android.view.animation.AccelerateDecelerateInterpolator;
@@ -105,7 +106,7 @@ public class MainActivity extends Activity implements TextureView.SurfaceTexture
         SeekBar z=new SeekBar(this);z.setMax(20);z.setProgress(8);box.addView(z);
         TextView value=new TextView(this);value.setText("גודל: 96%");value.setGravity(Gravity.CENTER);box.addView(value);
         z.setOnSeekBarChangeListener(new SeekBar.OnSeekBarChangeListener(){
-            public void onProgressChanged(SeekBar b,int p,boolean fromUser){value.setText("גודל: "+(88+p)+"%");demo.setScaleX((88+p)/100f);demo.setScaleY((88+p)/100f);}
+            public void onProgressChanged(SeekBar b,int p,boolean fromUser){value.setText("גודל: "+(88+p)+"%");demo.setScaleFactor((88+p)/100f);}
             public void onStartTrackingTouch(SeekBar b){}
             public void onStopTrackingTouch(SeekBar b){}
         });
@@ -116,10 +117,9 @@ public class MainActivity extends Activity implements TextureView.SurfaceTexture
 
     void showZoomSetup(){
         LinearLayout box=new LinearLayout(this);box.setOrientation(LinearLayout.VERTICAL);box.setPadding(24,8,24,4);
-        VideoView demo=new VideoView(this);
-        demo.setVideoURI(Uri.parse("android.resource://"+getPackageName()+"/"+R.raw.demo_video));
-        demo.setLayoutParams(new LinearLayout.LayoutParams(-1,420));
-        demo.setOnPreparedListener(mp->{mp.setLooping(true);mp.start();});
+        DemoPreviewView demo=new DemoPreviewView(this);
+        LinearLayout.LayoutParams demoParams=new LinearLayout.LayoutParams(-1,420);
+        demo.setLayoutParams(demoParams);
         box.addView(demo);
         SeekBar z=new SeekBar(this);z.setMax(20);z.setProgress(Math.max(0,Math.min(20,prefs.getInt("videoZoom",96)-88)));
         TextView value=new TextView(this);value.setText("גודל: "+(88+z.getProgress())+"%");value.setGravity(Gravity.CENTER);box.addView(z);box.addView(value);
