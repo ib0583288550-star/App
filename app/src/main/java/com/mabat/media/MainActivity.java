@@ -61,6 +61,7 @@ public class MainActivity extends Activity implements TextureView.SurfaceTexture
         movie.setSurfaceTextureListener(this);
 
         loadRoots();
+        loadHomeImage();
         applyAccent(prefs.getInt("accentColor",0xFF7C4DFF));
         findViewById(R.id.add).setOnClickListener(v->pick());
         findViewById(R.id.start).setOnClickListener(v->startScan());
@@ -286,8 +287,23 @@ public class MainActivity extends Activity implements TextureView.SurfaceTexture
         startActivityForResult(i,7);
     }
 
+    void loadHomeImage(){
+        String saved=prefs.getString("homeImageUri",null);
+        ImageView homePhoto=findViewById(R.id.homePhoto);
+        if(saved!=null&&homePhoto!=null){try{homePhoto.setImageURI(Uri.parse(saved));homePhoto.setVisibility(View.VISIBLE);}catch(Exception ignored){}}
+    }
+
     @Override protected void onActivityResult(int r,int c,Intent d){
         super.onActivityResult(r,c,d);
+        if(r==8&&c==RESULT_OK&&d!=null&&d.getData()!=null){
+            Uri u=d.getData();
+            try{getContentResolver().takePersistableUriPermission(u,Intent.FLAG_GRANT_READ_URI_PERMISSION);}catch(Exception ignored){}
+            prefs.edit().putString("homeImageUri",u.toString()).putBoolean("imageConfigured",true).apply();
+            ImageView homePhoto=findViewById(R.id.homePhoto);
+            if(homePhoto!=null){homePhoto.setImageURI(u);homePhoto.setVisibility(View.VISIBLE);}
+            toast("התמונה נשמרה");
+            return;
+        }
         if(r==7&&c==RESULT_OK&&d!=null&&d.getData()!=null){
             Uri u=d.getData();
             try{getContentResolver().takePersistableUriPermission(u,Intent.FLAG_GRANT_READ_URI_PERMISSION);}catch(Exception ignored){}
