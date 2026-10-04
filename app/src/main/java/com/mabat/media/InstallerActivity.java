@@ -135,7 +135,10 @@ public class InstallerActivity extends Activity {
                     status.setText("יצירת ה־APK נכשלה");
                     build.setEnabled(true);
                     install.setEnabled(generatedApk!=null && generatedApk.exists());
-                    new AlertDialog.Builder(this).setTitle("לא הצלחתי ליצור APK").setMessage(e.getMessage()==null?e.toString():e.getMessage()).setPositiveButton("סגור",null).show();
+                    new AlertDialog.Builder(this)
+                        .setTitle("לא הצלחתי ליצור את טיק דוס")
+                        .setMessage("אירעה תקלה בזמן יצירת ה־APK. נסה שוב.")
+                        .setPositiveButton("סגור",null).show();
                 });
             }
         }).start();
@@ -153,14 +156,17 @@ public class InstallerActivity extends Activity {
                 fallback.setDataAndType(uri,"application/vnd.android.package-archive");
                 fallback.addFlags(Intent.FLAG_GRANT_READ_URI_PERMISSION|Intent.FLAG_ACTIVITY_NEW_TASK);
                 if(fallback.resolveActivity(pm)==null){
-                    throw new ActivityNotFoundException("לא נמצא במכשיר מסך מערכת להתקנת APK");
+                    throw new ActivityNotFoundException();
                 }
                 startActivity(fallback);
             }else{
                 startActivity(i);
             }
         }catch(Exception e){
-            new AlertDialog.Builder(this).setTitle("לא ניתן לפתוח את ההתקנה").setMessage(e.getMessage()==null?e.toString():e.getMessage()).setPositiveButton("סגור",null).show();
+            new AlertDialog.Builder(this)
+                .setTitle("לא ניתן לפתוח את ההתקנה")
+                .setMessage("המכשיר לא מצא מסך מערכת להתקנת APK. אפשר לנסות לפתוח את הקובץ שנוצר דרך מנהל הקבצים.")
+                .setPositiveButton("סגור",null).show();
         }
     }
 }
