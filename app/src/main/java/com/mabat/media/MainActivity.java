@@ -21,7 +21,8 @@ public class MainActivity extends Activity implements TextureView.SurfaceTexture
     FrameLayout viewer;
     ImageView picture;
     TextureView movie;
-    TextView like, share, save, count, status, speed, timeText;
+    TextView share, save, count, status, speed, timeText;
+    ImageView pauseIndicator;
     SeekBar seekBar;
     Runnable progressUpdater;
     ArrayList<Uri> roots = new ArrayList<>(), items = new ArrayList<>();
@@ -51,19 +52,20 @@ public class MainActivity extends Activity implements TextureView.SurfaceTexture
 
         home=findViewById(R.id.home); viewer=findViewById(R.id.viewer);
         picture=findViewById(R.id.picture); movie=findViewById(R.id.movie);
-        like=findViewById(R.id.like); share=findViewById(R.id.share); save=findViewById(R.id.save);
+        share=findViewById(R.id.share); save=findViewById(R.id.save);
         count=findViewById(R.id.count); status=findViewById(R.id.status); speed=findViewById(R.id.speed);
+        pauseIndicator=findViewById(R.id.pauseIndicator);
         seekBar=findViewById(R.id.seekBar); timeText=findViewById(R.id.timeText);
         likes=getSharedPreferences("likes",0);
         prefs=getSharedPreferences("settings",0);
         movie.setSurfaceTextureListener(this);
 
         loadRoots();
+        applyAccent(prefs.getInt("accentColor",0xFF7C4DFF));
         findViewById(R.id.add).setOnClickListener(v->pick());
         findViewById(R.id.start).setOnClickListener(v->startScan());
         findViewById(R.id.settings).setOnClickListener(v->showSettings());
         findViewById(R.id.back).setOnClickListener(v->closeViewer());
-        like.setOnClickListener(v->toggleLike());
         share.setOnClickListener(v->share());
         save.setOnClickListener(v->save());
         seekBar.setOnSeekBarChangeListener(new SeekBar.OnSeekBarChangeListener(){
@@ -91,7 +93,7 @@ public class MainActivity extends Activity implements TextureView.SurfaceTexture
             if(System.currentTimeMillis()-downTime<300){if(doubleTapPending){doubleTapPending=false;
                 // Double-tap also brings the hidden controls back so the back button is immediately reachable.
                 setControlsVisible(true); scheduleControlsHide();
-                if(prefs.getBoolean("gestureDoubleTap",true)){float third=viewer.getWidth()/3f,x=e.getX();if(x<third)seekBy(-10000);else if(x>third*2f)seekBy(10000);else toggleLike();}else togglePlayback();}
+                if(prefs.getBoolean("gestureDoubleTap",true)){float third=viewer.getWidth()/3f,x=e.getX();if(x<third)seekBy(-10000);else if(x>third*2f)seekBy(10000);else togglePlayback();}else togglePlayback();}
                 else{doubleTapPending=true;handler.postDelayed(()->{if(doubleTapPending){doubleTapPending=false;togglePlayback();}},240);}}return true;}return true;
     }
 
@@ -103,7 +105,7 @@ public class MainActivity extends Activity implements TextureView.SurfaceTexture
         SeekBar z=new SeekBar(this);z.setMax(20);z.setProgress(8);box.addView(z);
         TextView value=new TextView(this);value.setText("גודל: 96%");value.setGravity(Gravity.CENTER);box.addView(value);
         z.setOnSeekBarChangeListener(new SeekBar.OnSeekBarChangeListener(){
-            public void onProgressChanged(SeekBar b,int p,boolean fromUser){value.setText("גודל: "+(88+p)+"%");}
+            public void onProgressChanged(SeekBar b,int p,boolean fromUser){value.setText("גודל: "+(88+p)+"%");demo.setScaleX((88+p)/100f);demo.setScaleY((88+p)/100f);}
             public void onStartTrackingTouch(SeekBar b){}
             public void onStopTrackingTouch(SeekBar b){}
         });
@@ -114,6 +116,11 @@ public class MainActivity extends Activity implements TextureView.SurfaceTexture
 
     void showZoomSetup(){
         LinearLayout box=new LinearLayout(this);box.setOrientation(LinearLayout.VERTICAL);box.setPadding(24,8,24,4);
+        VideoView demo=new VideoView(this);
+        demo.setVideoURI(Uri.parse("android.resource://"+getPackageName()+"/"+R.raw.demo_video));
+        demo.setLayoutParams(new LinearLayout.LayoutParams(-1,420));
+        demo.setOnPreparedListener(mp->{mp.setLooping(true);mp.start();});
+        box.addView(demo);
         SeekBar z=new SeekBar(this);z.setMax(20);z.setProgress(Math.max(0,Math.min(20,prefs.getInt("videoZoom",96)-88)));
         TextView value=new TextView(this);value.setText("גודל: "+(88+z.getProgress())+"%");value.setGravity(Gravity.CENTER);box.addView(z);box.addView(value);
         z.setOnSeekBarChangeListener(new SeekBar.OnSeekBarChangeListener(){
@@ -131,13 +138,11 @@ public class MainActivity extends Activity implements TextureView.SurfaceTexture
         CheckBox g=new CheckBox(this);g.setText("דאבל־טאפ: אחורה / לייק / קדימה");g.setChecked(prefs.getBoolean("gestureDoubleTap",true));
         CheckBox sp=new CheckBox(this);sp.setText("לחיצה ארוכה = כפול 2");sp.setChecked(prefs.getBoolean("longSpeed",true));
         CheckBox l=new CheckBox(this);l.setText("נעילת כפול 2 בהחלקה למטה");l.setChecked(prefs.getBoolean("speedLock",true));
-        CheckBox rp=new CheckBox(this);rp.setText("אם הסרטון ניגן ביציאה — להמשיך כשחוזרים");rp.setChecked(prefs.getBoolean("resumeIfPlaying",true));
-        CheckBox rq=new CheckBox(this);rq.setText("אם הסרטון היה מושהה — להמשיך כשחוזרים");rq.setChecked(prefs.getBoolean("resumeIfPaused",false));
-        CheckBox ap=new CheckBox(this);ap.setText("הפעל סרטון אוטומטית במעבר לפריט");ap.setChecked(prefs.getBoolean("autoPlay",true));
+                CheckBox ap=new CheckBox(this);ap.setText("הפעל סרטון אוטומטית במעבר לפריט");ap.setChecked(prefs.getBoolean("autoPlay",true));
         CheckBox tr=new CheckBox(this);tr.setText("אנימציית מעבר בין סרטונים");tr.setChecked(prefs.getBoolean("transitionAnim",true));
         Button zoom=new Button(this);zoom.setText("גודל סרטון: "+prefs.getInt("videoZoom",96)+"%");zoom.setOnClickListener(v->showZoomSetup());
-        box.addView(a);box.addView(g);box.addView(sp);box.addView(l);box.addView(rp);box.addView(rq);box.addView(ap);box.addView(tr);box.addView(zoom);
-        new AlertDialog.Builder(this).setTitle("⚙ הגדרות טיק דוס").setView(box).setPositiveButton("שמור",(d,w)->prefs.edit().putBoolean("autoHide",a.isChecked()).putBoolean("gestureDoubleTap",g.isChecked()).putBoolean("longSpeed",sp.isChecked()).putBoolean("speedLock",l.isChecked()).putBoolean("resumeIfPlaying",rp.isChecked()).putBoolean("resumeIfPaused",rq.isChecked()).putBoolean("autoPlay",ap.isChecked()).putBoolean("transitionAnim",tr.isChecked()).apply()).setNegativeButton("ביטול",null).show();}
+        box.addView(a);box.addView(g);box.addView(sp);box.addView(l);box.addView(ap);box.addView(tr);box.addView(zoom);box.addView(colors);
+        new AlertDialog.Builder(this).setTitle("⚙ הגדרות טיק דוס").setView(box).setPositiveButton("שמור",(d,w)->prefs.edit().putBoolean("autoHide",a.isChecked()).putBoolean("gestureDoubleTap",g.isChecked()).putBoolean("longSpeed",sp.isChecked()).putBoolean("speedLock",l.isChecked()).putBoolean("autoPlay",ap.isChecked()).putBoolean("transitionAnim",tr.isChecked()).apply()).setNegativeButton("ביטול",null).show();}
     
     boolean isVideo(){ return player!=null && player.isPlaying() || movie.getVisibility()==View.VISIBLE && items.size()>0 && isVideoUri(items.get(pos)); }
     boolean isVideoUri(Uri u){ String m=getContentResolver().getType(u); return m!=null && m.startsWith("video/"); }
@@ -145,9 +150,7 @@ public class MainActivity extends Activity implements TextureView.SurfaceTexture
     void togglePlayback() {
         if (player==null) return;
         if (player.isPlaying()) player.pause(); else player.start();
-        speed.setText(player.isPlaying() ? "" : "❚❚");
-        speed.setVisibility(View.VISIBLE);
-        if (player.isPlaying()) handler.postDelayed(()->speed.setVisibility(View.GONE),450);
+        if (player.isPlaying()) { hidePauseIndicator(); } else { showPauseIndicator(); }
     }
 
     void seekBy(int ms) {
@@ -233,7 +236,6 @@ public class MainActivity extends Activity implements TextureView.SurfaceTexture
             if(movie.isAvailable()) prepareVideo(u,movie.getSurfaceTexture());
             speed.setVisibility(View.GONE);
         } else picture.setImageURI(u);
-        like.setText(""); like.setAlpha(likes.getBoolean(u.toString(),false)?1f:0.65f);
         count.setText((pos+1)+" / "+items.size());
     }
 
@@ -281,18 +283,6 @@ public class MainActivity extends Activity implements TextureView.SurfaceTexture
 
     void next(){speedLocked=false;if(!items.isEmpty()){pos=(pos+1)%items.size();render();}}
     void prev(){speedLocked=false;if(!items.isEmpty()){pos=(pos-1+items.size())%items.size();render();}}
-    void toggleLike(){if(items.isEmpty())return;Uri u=items.get(pos);boolean n=!likes.getBoolean(u.toString(),false);likes.edit().putBoolean(u.toString(),n).apply();like.setText(""); like.setAlpha(n?1f:0.65f);}
-    void share(){if(items.isEmpty())return;Uri u=items.get(pos);String mime=getContentResolver().getType(u);Intent i=new Intent(Intent.ACTION_SEND);i.setType(mime!=null?mime:"*/*");i.putExtra(Intent.EXTRA_STREAM,u);i.addFlags(Intent.FLAG_GRANT_READ_URI_PERMISSION);startActivity(Intent.createChooser(i,"שיתוף"));}
-    void save(){
-        if(items.isEmpty())return;Uri src=items.get(pos);String mime=getContentResolver().getType(src);if(mime==null){toast("סוג הקובץ לא זוהה");return;}
-        boolean vid=mime.startsWith("video/");String extension=vid?".mp4":".jpg";String name="טיק_דוס_"+System.currentTimeMillis()+extension;
-        ContentValues v=new ContentValues();v.put(MediaStore.MediaColumns.DISPLAY_NAME,name);v.put(MediaStore.MediaColumns.MIME_TYPE,mime);
-        v.put(MediaStore.MediaColumns.RELATIVE_PATH,vid?Environment.DIRECTORY_MOVIES+"/טיק דוס":Environment.DIRECTORY_PICTURES+"/טיק דוס");
-        try{Uri out=getContentResolver().insert(vid?MediaStore.Video.Media.EXTERNAL_CONTENT_URI:MediaStore.Images.Media.EXTERNAL_CONTENT_URI,v);if(out==null)throw new IOException();
-            InputStream in=getContentResolver().openInputStream(src);OutputStream os=getContentResolver().openOutputStream(out);if(in==null||os==null)throw new IOException();
-            byte[] buffer=new byte[8192];int n;while((n=in.read(buffer))!=-1)os.write(buffer,0,n);in.close();os.close();toast("נשמר בגלריה");
-        }catch(Exception e){toast("שמירה נכשלה");}
-    }
     void showAbout(){new AlertDialog.Builder(this).setTitle("אודות").setMessage("טיק דוס\n\nYB Apps").setPositiveButton("סגור",null).show();}
     void toast(String s){Toast.makeText(this,s,Toast.LENGTH_SHORT).show();}
 
