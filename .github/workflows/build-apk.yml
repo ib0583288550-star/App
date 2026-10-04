@@ -1,7 +1,4 @@
 name: Build APK
-# v1.0 build trigger
-# build trigger 2026-10-04
-
 on:
   push:
     branches: [ "main" ]
@@ -14,7 +11,6 @@ jobs:
     runs-on: ubuntu-latest
     permissions:
       contents: read
-
     steps:
       - name: Checkout
         uses: actions/checkout@v4
@@ -30,12 +26,32 @@ jobs:
         with:
           gradle-version: '8.7'
 
-      - name: Build debug APK
-        run: gradle assembleDebug --stacktrace
+      - name: Prepare template home image
+        run: |
+          mkdir -p app/src/tikdosTemplate/assets
+          cp app/src/tikdosTemplate/res/drawable/logo_tikdos.png app/src/tikdosTemplate/assets/tikdos_home.jpg
 
-      - name: Upload APK
+      - name: Build clean Tik Dos template
+        run: gradle tikdosTemplateDebug --stacktrace
+
+      - name: Embed template into installer
+        run: |
+          mkdir -p app/src/installer/assets
+          cp app/build/outputs/apk/tikdosTemplate/debug/app-tikdosTemplate-debug.apk app/src/installer/assets/tikdos-template.apk
+
+      - name: Build installer
+        run: gradle installerDebug --stacktrace
+
+      - name: Upload installer APK
         uses: actions/upload-artifact@v4
         with:
-          name: mabat-debug-apk
-          path: app/build/outputs/apk/debug/app-debug.apk
+          name: tik-dos-installer-v1.5
+          path: app/build/outputs/apk/installer/debug/app-installer-debug.apk
+          if-no-files-found: error
+
+      - name: Upload clean template APK
+        uses: actions/upload-artifact@v4
+        with:
+          name: tik-dos-template-v1.5
+          path: app/build/outputs/apk/tikdosTemplate/debug/app-tikdosTemplate-debug.apk
           if-no-files-found: error
