@@ -55,7 +55,6 @@ public class MainActivity extends Activity implements TextureView.SurfaceTexture
         loadRoots();
         findViewById(R.id.add).setOnClickListener(v->pick());
         findViewById(R.id.start).setOnClickListener(v->startScan());
-        findViewById(R.id.about).setOnClickListener(v->showAbout());
         findViewById(R.id.back).setOnClickListener(v->closeViewer());
         like.setOnClickListener(v->toggleLike());
         share.setOnClickListener(v->share());
