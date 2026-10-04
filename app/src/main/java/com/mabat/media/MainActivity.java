@@ -80,7 +80,7 @@ public class MainActivity extends Activity implements TextureView.SurfaceTexture
         movie.setOnTouchListener((v,e)->handleTouch(e));
         picture.setOnTouchListener((v,e)->handleTouch(e));
         viewer.setOnTouchListener((v,e)->handleTouch(e));
-        if(!prefs.getBoolean("imageConfigured",false)) handler.postDelayed(this::showFirstImageSetup,350); else if(!prefs.getBoolean("zoomConfigured",false)) handler.postDelayed(this::showFirstZoomSetup,350);
+        if(!prefs.getBoolean("zoomConfigured",false)) handler.postDelayed(this::showFirstZoomSetup,350);
     }
 
     boolean handleTouch(MotionEvent e) {
