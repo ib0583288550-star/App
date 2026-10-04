@@ -13,8 +13,9 @@ import java.io.*;
 public class InstallerActivity extends Activity {
     ImageView preview;
     TextView status;
-    Button choose, build;
+    Button choose, build, install;
     Uri selected;
+    File generatedApk;
 
     @Override public void onCreate(Bundle b) {
         super.onCreate(b);
@@ -65,6 +66,12 @@ public class InstallerActivity extends Activity {
         build.setText("צור APK של טיק דוס");
         build.setAllCaps(false);
         build.setEnabled(false);
+        install=new Button(this);
+        install.setText("התקן את טיק דוס");
+        install.setAllCaps(false);
+        install.setEnabled(false);
+        LinearLayout.LayoutParams ip=new LinearLayout.LayoutParams(-1,56); ip.topMargin=10;
+        root.addView(install,ip);
         LinearLayout.LayoutParams bp=new LinearLayout.LayoutParams(-1,56); bp.topMargin=10;
         root.addView(build,bp);
 
@@ -76,6 +83,7 @@ public class InstallerActivity extends Activity {
         setContentView(root);
         choose.setOnClickListener(v->pickImage());
         build.setOnClickListener(v->createApk());
+        install.setOnClickListener(v->{ if(generatedApk!=null && generatedApk.exists()) installApk(generatedApk); else Toast.makeText(this,"קודם צור את ה־APK",Toast.LENGTH_SHORT).show(); });
     }
 
     void pickImage(){
@@ -103,21 +111,23 @@ public class InstallerActivity extends Activity {
         build.setEnabled(false);
         new Thread(()->{
             try{
-                File out=new File(getCacheDir(),"generated/tik-dos.apk");
+                File out=new File(getFilesDir(),"generated/tik-dos.apk");
                 File dir=out.getParentFile(); if(!dir.exists()) dir.mkdirs();
                 try(InputStream in=getContentResolver().openInputStream(selected)){
                     if(in==null) throw new IOException("לא ניתן לפתוח את התמונה");
                     ApkGenerator.create(this,in,out);
                 }
                 runOnUiThread(()->{
+                    generatedApk=out;
                     status.setText("טיק דוס החדש מוכן ✓");
                     build.setEnabled(true);
-                    installApk(out);
+                    install.setEnabled(true);
                 });
             }catch(Exception e){
                 runOnUiThread(()->{
                     status.setText("יצירת ה־APK נכשלה");
                     build.setEnabled(true);
+                    install.setEnabled(generatedApk!=null && generatedApk.exists());
                     new AlertDialog.Builder(this).setTitle("לא הצלחתי ליצור APK").setMessage(e.getMessage()==null?e.toString():e.getMessage()).setPositiveButton("סגור",null).show();
                 });
             }
@@ -127,12 +137,13 @@ public class InstallerActivity extends Activity {
     void installApk(File apk){
         try{
             Uri uri=FileProvider.getUriForFile(this,"com.mabat.installer.fileprovider",apk);
-            Intent i=new Intent(Intent.ACTION_VIEW);
-            i.setDataAndType(uri,"application/vnd.android.package-archive");
+            Intent i=new Intent(Intent.ACTION_INSTALL_PACKAGE);
+            i.setData(uri);
+            i.setType("application/vnd.android.package-archive");
             i.addFlags(Intent.FLAG_GRANT_READ_URI_PERMISSION|Intent.FLAG_ACTIVITY_NEW_TASK);
             startActivity(i);
         }catch(Exception e){
-            new AlertDialog.Builder(this).setTitle("ה־APK נוצר").setMessage("הקובץ נוצר, אבל לא הצלחתי לפתוח את מסך ההתקנה. נסה לפתוח את הקובץ מתיקיית האפליקציה.").setPositiveButton("סגור",null).show();
+            new AlertDialog.Builder(this).setTitle("ה־APK נוצר").setMessage("הקובץ מוכן. לחץ על כפתור "התקן את טיק דוס" כדי לפתוח את ההתקנה.").setPositiveButton("סגור",null).show();
         }
     }
 }
