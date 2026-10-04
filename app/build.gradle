@@ -7,10 +7,28 @@ android {
     compileSdk 35
 
     defaultConfig {
-        applicationId 'com.mabat.media'
+        applicationId 'com.mabat.installer'
         minSdk 23
         targetSdk 35
-        versionCode 14
-        versionName 'v1.4'
+        versionCode 15
+        versionName 'v1.5'
     }
+
+    flavorDimensions "mode"
+    productFlavors {
+        installer {
+            dimension "mode"
+            applicationId 'com.mabat.installer'
+        }
+        tikdosTemplate {
+            dimension "mode"
+            applicationId 'com.mabat.media'
+        }
+    }
+}
+
+dependencies {
+    implementation 'org.bouncycastle:bcprov-jdk18on:1.78.1'
+    implementation 'org.bouncycastle:bcpkix-jdk18on:1.78.1'
+    implementation 'androidx.core:core:1.15.0'
 }
