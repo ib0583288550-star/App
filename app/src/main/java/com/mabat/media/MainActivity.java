@@ -218,7 +218,7 @@ public class MainActivity extends Activity implements TextureView.SurfaceTexture
         float sx=(float)sw/(float)vw;
         float sy=(float)sh/(float)vh;
         // TextureView transform uses view-space scale: enlarge the texture to exactly fill the screen.
-        m.setScale((float)vw/(float)sw,(float)vh/(float)sh,sw/2f,sh/2f);
+        m.setScale(((float)vw/(float)sw)*0.96f,(float)vh/(float)sh,sw/2f,sh/2f);
         movie.setTransform(m);
     }
 
@@ -258,6 +258,6 @@ public class MainActivity extends Activity implements TextureView.SurfaceTexture
     @Override public void onSurfaceTextureSizeChanged(SurfaceTexture st,int w,int h){if(player!=null)fitVideo(player.getVideoWidth(),player.getVideoHeight());}
     @Override public boolean onSurfaceTextureDestroyed(SurfaceTexture st){releasePlayer();return true;}
     @Override public void onSurfaceTextureUpdated(SurfaceTexture st){}
-    @Override protected void onPause(){super.onPause();if(player!=null)player.pause();}
-    @Override protected void onResume(){super.onResume();if(player!=null)player.start();}
+    @Override protected void onPause(){super.onPause();speedLocked=false;if(player!=null){try{player.setPlaybackParams(new PlaybackParams().setSpeed(1f));}catch(Exception ignored){}player.pause();}}
+    @Override protected void onResume(){super.onResume();speedLocked=false;if(player!=null){try{player.setPlaybackParams(new PlaybackParams().setSpeed(1f));}catch(Exception ignored){}player.start();}}
 }
