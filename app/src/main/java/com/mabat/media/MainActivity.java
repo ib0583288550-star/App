@@ -39,12 +39,9 @@ public class MainActivity extends Activity implements TextureView.SurfaceTexture
         super.onCreate(b);
         getWindow().setFlags(WindowManager.LayoutParams.FLAG_FULLSCREEN, WindowManager.LayoutParams.FLAG_FULLSCREEN);
         getWindow().getDecorView().setSystemUiVisibility(
-            View.SYSTEM_UI_FLAG_FULLSCREEN
-            | View.SYSTEM_UI_FLAG_HIDE_NAVIGATION
-            | View.SYSTEM_UI_FLAG_IMMERSIVE_STICKY
-            | View.SYSTEM_UI_FLAG_LAYOUT_FULLSCREEN
-            | View.SYSTEM_UI_FLAG_LAYOUT_HIDE_NAVIGATION
-            | View.SYSTEM_UI_FLAG_LAYOUT_STABLE
+            View.SYSTEM_UI_FLAG_FULLSCREEN | View.SYSTEM_UI_FLAG_HIDE_NAVIGATION |
+            View.SYSTEM_UI_FLAG_IMMERSIVE_STICKY | View.SYSTEM_UI_FLAG_LAYOUT_FULLSCREEN |
+            View.SYSTEM_UI_FLAG_LAYOUT_HIDE_NAVIGATION | View.SYSTEM_UI_FLAG_LAYOUT_STABLE
         );
         setContentView(R.layout.activity_main);
 
@@ -66,9 +63,7 @@ public class MainActivity extends Activity implements TextureView.SurfaceTexture
         save.setOnClickListener(v->save());
         seekBar.setOnSeekBarChangeListener(new SeekBar.OnSeekBarChangeListener(){
             public void onProgressChanged(SeekBar b,int p,boolean fromUser){
-                if(fromUser && player!=null && player.getDuration()>0){
-                    player.seekTo((int)((long)p*player.getDuration()/1000L));
-                }
+                if(fromUser && player!=null && player.getDuration()>0) player.seekTo((int)((long)p*player.getDuration()/1000L));
                 updateTime();
             }
             public void onStartTrackingTouch(SeekBar b){}
@@ -83,11 +78,7 @@ public class MainActivity extends Activity implements TextureView.SurfaceTexture
     boolean handleTouch(MotionEvent e) {
         if (e.getAction()==MotionEvent.ACTION_DOWN) {
             downX=e.getX(); downY=e.getY(); downTime=System.currentTimeMillis(); moved=false; longPressing=false;
-            if (isVideo()) {
-                handler.postDelayed(()->{
-                    if (!moved && isVideo()) { longPressing=true; setSpeed(2f); }
-                }, 320);
-            }
+            if (isVideo()) handler.postDelayed(()->{ if (!moved && isVideo()) { longPressing=true; setSpeed(2f); } }, 320);
             return true;
         }
         if (e.getAction()==MotionEvent.ACTION_MOVE) {
@@ -104,14 +95,10 @@ public class MainActivity extends Activity implements TextureView.SurfaceTexture
             }
             long duration=System.currentTimeMillis()-downTime;
             if (duration<300) {
-                if (doubleTapPending) {
-                    doubleTapPending=false;
-                    seekBy(10_000);
-                } else {
+                if (doubleTapPending) { doubleTapPending=false; seekBy(10_000); }
+                else {
                     doubleTapPending=true;
-                    handler.postDelayed(()->{
-                        if (doubleTapPending) { doubleTapPending=false; togglePlayback(); }
-                    }, 240);
+                    handler.postDelayed(()->{ if (doubleTapPending) { doubleTapPending=false; togglePlayback(); } }, 240);
                 }
             }
             return true;
@@ -222,7 +209,6 @@ public class MainActivity extends Activity implements TextureView.SurfaceTexture
             player=new MediaPlayer();
             player.setDataSource(this,u);
             Surface surface=new android.view.Surface(st);
-            try { surface.setScalingMode(Surface.SCALING_MODE_SCALE_TO_WINDOW); } catch(Exception ignored){}
             player.setSurface(surface);
             player.setLooping(true);
             player.setOnVideoSizeChangedListener((mp,w,h)->fitVideo(w,h));
@@ -235,7 +221,6 @@ public class MainActivity extends Activity implements TextureView.SurfaceTexture
         if(vw<=0||vh<=0)return;
         int sw=movie.getWidth(),sh=movie.getHeight();
         if(sw<=0||sh<=0)return;
-
         Matrix m=new Matrix();
         RectF src=new RectF(0,0,vw,vh);
         RectF dst=new RectF(0,0,sw,sh);
@@ -274,14 +259,7 @@ public class MainActivity extends Activity implements TextureView.SurfaceTexture
             byte[] buffer=new byte[8192];int n;while((n=in.read(buffer))!=-1)os.write(buffer,0,n);in.close();os.close();toast("נשמר בגלריה");
         }catch(Exception e){toast("שמירה נכשלה");}
     }
-    void showAbout(){
-        new AlertDialog.Builder(this)
-            .setTitle("אודות")
-            .setMessage("מבט\n\nYB Apps")
-            .setPositiveButton("סגור",null)
-            .show();
-    }
-
+    void showAbout(){new AlertDialog.Builder(this).setTitle("אודות").setMessage("מבט\n\nYB Apps").setPositiveButton("סגור",null).show();}
     void toast(String s){Toast.makeText(this,s,Toast.LENGTH_SHORT).show();}
 
     @Override public void onSurfaceTextureAvailable(SurfaceTexture st,int w,int h){if(movie.getTag()!=null)prepareVideo((Uri)movie.getTag(),st);}
