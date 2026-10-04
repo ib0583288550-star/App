@@ -226,13 +226,17 @@ public class MainActivity extends Activity implements TextureView.SurfaceTexture
     void fitVideo(int vw,int vh){
         if(vw<=0||vh<=0)return;
         int sw=movie.getWidth(),sh=movie.getHeight(); if(sw<=0||sh<=0)return;
-        // True edge-to-edge fill: map the complete video rectangle exactly onto
-        // the complete TextureView rectangle. This intentionally does not preserve
-        // aspect ratio, so there can be no black bars at the top/bottom or sides.
+        // TikTok/Instagram-style full-screen crop: preserve the video's aspect
+        // ratio while scaling it until every edge of the screen is covered.
+        // Any excess is cropped, so no black bars can appear.
+        float scale=Math.max((float)sw/vw,(float)sh/vh);
+        float sx=scale, sy=scale;
+        float scaledW=vw*sx, scaledH=vh*sy;
+        float dx=(sw-scaledW)/2f;
+        float dy=(sh-scaledH)/2f;
         Matrix m=new Matrix();
-        m.setRectToRect(new android.graphics.RectF(0,0,vw,vh),
-                        new android.graphics.RectF(0,0,sw,sh),
-                        Matrix.ScaleToFit.FILL);
+        m.setScale(sx,sy);
+        m.postTranslate(dx,dy);
         movie.setTransform(m);
     }
 
