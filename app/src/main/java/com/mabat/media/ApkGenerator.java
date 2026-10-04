@@ -6,6 +6,7 @@ import android.graphics.BitmapFactory;
 import android.graphics.Canvas;
 import android.graphics.Rect;
 import java.io.*;
+import java.math.BigInteger;
 import java.security.*;
 import java.security.cert.Certificate;
 import java.security.cert.CertificateFactory;
@@ -23,16 +24,14 @@ import org.bouncycastle.operator.ContentSigner;
 import org.bouncycastle.operator.jcajce.JcaContentSignerBuilder;
 import org.bouncycastle.cert.X509CertificateHolder;
 import org.bouncycastle.cert.jcajce.JcaX509CertificateHolder;
+import org.bouncycastle.cert.jcajce.JcaX509v3CertificateBuilder;
+import org.bouncycastle.asn1.x500.X500Name;
 
 public final class ApkGenerator {
     private static final String TEMPLATE = "tikdos-template.apk";
     private static final String HOME_ASSET = "assets/tikdos_home.jpg";
     private static final String ICON_PATH = "res/drawable/logo_tikdos.png";
 
-    private static final String KEY_B64 =
-        "MIIEvQIBADANBgkqhkiG9w0BAQEFAASCBKcwggSjAgEAAoIBAQC0Kz8xEpm0ZgXjYyMKU8aPJmXBtHWB2p/mh1N99YwLytACm4319AENxrVDpphiOGPZANgeDILnQSnTi5yrh6LqphNX09qV2pVD32KloYa2KUq1B0WBu7dVFSlG3noDdvupgY56agmGNiCZRCxDF1mcf+ch9loh1FvepAz0wy6AT1CcSGKsSov4U6I3efli1/BoyG27ioQQdxVSMHh5mB3H6oVrglN8DyJO08QVrd0aWTSdIZo6WnAy7BzY4AcGlyksCBi5O9gvNE73i4tXca56PmS38rpwYl5fZu8H3bAh+vdU4inryT7Fsi3nVO9zJtFVrbFVr+pZqiUGz4ZD/+NXAgMBAAECggEAQHB3WYXdk7gpwvpiPf9YtTp2iqGQpbEcH8enBRYd0NnpLAWW8LEk71hy3I9pUTf5/lNe+OBgsXWNECyPDIqmqmZb5L3RIGfdmzj6f2MWW3DJV5YSNiR9neDDsqU/3p1fxXChFQd4AJi7cBYB/r0LP/4/HNaPxim98hOazrBAoYMhDY0OP6T/W7Ou21vm1XXMnEcDXBTtVE+tBMGEr8kuityPMm6T3Lg83WRDYbWu9p+ATvytNJYrdpxzw8v4aSE9JED26a/RH1dJOvWGVjbGhkdNZfDjAXFkXe7iBLeWn6bmyO/CYZG6APUqvMT+aHHfAIGq4ZBX6ZYhYq93DN9zAQKBgQD9Gbih0iTt6H20Iutr0zgLVdy5lFffLe8uDzaON/E0tAz3I4ri3LiAx2s40Sx0Wruwxx6sqwhkamyp/sVkUUtu5HVR7iaSlDPVC671R++j7spr2v6+mECtSAWY36aKyEHYjbpRiZsZfyqxLK//z+lUrUkpYfiDYYphulZAx+0a/wKBgQC2O6LYp0LPgbxNU4Wd+Nt1vUGuhwqzHO2XAXaURKVbJCuOd4VwJkiL+VRD6CRDZMPiCh46yGzIBIX5wGtoozEZGwjIEyK3C8H/wDBy+8serCdk4pBILpT1mS32W6j0hI/8Li7i2oi2G+aYUUbNPbX6n0x3faRAascMPtWazLvvqQKBgQCEsk+Sx9KEyTfekdBMH9lqWAH5akUHxdV4mJFJzxqvPxbtG71dY8t3+RXGHCTqfAebj0oNzT4BJ6sBFYn4JoceBLld0zZ18y2ZrR51itmhYTjPg2m8E6cVMoV8uQVgDc4381aUGUkv/PQtH/jGbgMvWgrZn3vjpegfhMpj/G3bkQKBgG1Axbn0VVbI5hbJ+zKhbxlglM9IwP5vWnYM94WevjAtODvaplJ9cUMSARYRSCRrdhC/li4R2T31kEkStpJuPFJb5eDltq+UT4XAOIvHL5i9B4UxW+UaoE26P1cSzvGBxD0hhxSUhiAADDjHiZYk6ERQWuzMk7vXCGzsAu4izo25AoGAYkjbIv4NEQrsZNQ1Vp1NEiJlPanc3SS6oXnJN2fM4X6rftcKQnJM9nUv72u0btwuAomuFL1uECGMqxnGKuDXFstttQeSd22WA523aKyRpAx2v2/dMip1m6GwWpzepMPYeFBRi0Uch9bC0whRxo6JxJqH0oeYx7mmbUKSTpIGdrA=";
-    private static final String CERT_B64 =
-        "MIIDVzCCAj+gAwIBAgIUF1DQ3xYXB4M15GJDUKG1LKswPVEwDQYJKoZIhvcNAQELBQAwOzEaMBgGA1UEAwwRVGlrIERvcyBHZW5lcmF0b3IxEDAOBgNVBAoMB1lCIEFwcHMxCzAJBgNVBAYTAklMMB4XDTI2MTAwNDIxMjg0MVoXDTM2MTAwMTIxMjg0MVowOzEaMBgGA1UEAwwRVGlrIERvcyBHZW5lcmF0b3IxEDAOBgNVBAoMB1lCIEFwcHMxCzAJBgNVBAYTAklMMIIBIjANBgkqhkiG9w0BAQEFAAOCAQ8AMIIBCgKCAQEAtCs/MRKZtGYF42MjClPGjyZlwbR1gdqf5odTffWMC8rQApuN9fQBDca1Q6aYYjhj2QDYHgyC50Ep04ucq4ei6qYTV9PaldqVQ99ipaGGtilKtQdFgbu3VRUpRt56A3b7qYGOemoJhjYgmUQsQxdZnH/nIfZaIdRb3qQM9MMugE9QnEhirEqL+FOiN3n5YtfwaMhtu4qEEHcVUjB4eZgdx+qFa4JTfA8iTtPEFa3dGlk0nSGaOlpwMuwc2OAHBpcpLAgYuTvYLzRO94uLV3Guej5kt/K6cGJeX2bvB92wIfr3VOIp68k+xbIt51TvcybRVa2xVa/qWaolBs+GQ//jVwIDAQABo1MwUTAdBgNVHQ4EFgQUOkmDCHQW8Dj6e3tYR95Ze0bVBeYwHwYDVR0jBBgwFoAUOkmDCHQW8Dj6e3tYR95Ze0bVBeYwDwYDVR0TAQH/BAUwAwEB/zANBgkqhkiG9w0BAQsFAAOCAQEApefhS0vXZy3eIw3GbN7vTCZHyL6XYpokVXumDF+THVYVcbSRzGhPDU6CiXsxBBCrx7XrvjPa2CGdJuXcSHRVw2gIuWnbUnDcOJiTSiYsTaq5ZJyg+ShJOZgGP+JyYYUPymEBSQE/Gfohw05CkwL6BjkcspW7ECUXfanpArctwqLw+NhJ+5peKNa+Fr3RhwHaWvRJm7t2eD5l5iW86tNhr394usammtB5Jho3E1T2OHmxMtQv4RLuqFjTsEekiU78noVeV3mOn3FAi8CrbX5EnwH/4vJWyjIK1p6mSghizzj2R8brjMpzFj3/SF7HxoqoXju3q/c83lK/cLQlT8hTzw==";
 
     public static File create(Context context, InputStream image, File out) throws Exception {
         if (Security.getProvider("BC") == null) Security.addProvider(new BouncyCastleProvider());
@@ -130,13 +129,24 @@ public final class ApkGenerator {
     private static void put(ZipOutputStream z,String n,byte[] b)throws Exception{z.putNextEntry(new ZipEntry(n));z.write(b);z.closeEntry();}
 
     private static byte[] makePkcs7(byte[] sfBytes) throws Exception {
-        byte[] key=Base64.getDecoder().decode(KEY_B64);
-        byte[] cert=Base64.getDecoder().decode(CERT_B64);
-        PrivateKey pk=KeyFactory.getInstance("RSA").generatePrivate(new PKCS8EncodedKeySpec(key));
-        CertificateFactory cf=CertificateFactory.getInstance("X.509");
-        Certificate c=cf.generateCertificate(new ByteArrayInputStream(cert));
-        X509CertificateHolder holder=new JcaX509CertificateHolder((java.security.cert.X509Certificate)c);
-        ContentSigner signer=new JcaContentSignerBuilder("SHA256withRSA").build(pk);
+        KeyPairGenerator kpg=KeyPairGenerator.getInstance("RSA");
+        kpg.initialize(2048);
+        KeyPair kp=kpg.generateKeyPair();
+
+        long now=System.currentTimeMillis();
+        X500Name name=new X500Name("CN=Tik Dos Generator,O=YB Apps,C=IL");
+        JcaX509v3CertificateBuilder cb=new JcaX509v3CertificateBuilder(
+                name,
+                BigInteger.valueOf(now).abs(),
+                new Date(now-60000L),
+                new Date(now+10L*365*24*60*60*1000),
+                name,
+                kp.getPublic());
+
+        ContentSigner certSigner=new JcaContentSignerBuilder("SHA256withRSA").build(kp.getPrivate());
+        X509CertificateHolder holder=cb.build(certSigner);
+
+        ContentSigner signer=new JcaContentSignerBuilder("SHA256withRSA").build(kp.getPrivate());
         CMSSignedDataGenerator gen=new CMSSignedDataGenerator();
         gen.addSignerInfoGenerator(new JcaSignerInfoGeneratorBuilder(
                 new org.bouncycastle.operator.jcajce.JcaDigestCalculatorProviderBuilder().build())
