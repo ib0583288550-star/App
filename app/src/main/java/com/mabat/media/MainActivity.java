@@ -36,6 +36,7 @@ public class MainActivity extends Activity implements TextureView.SurfaceTexture
     boolean speedLocked=false;
     SharedPreferences prefs;
     Runnable longPressRunnable;
+    boolean resumePlaybackAfterPause=false;
 
     @Override public void onCreate(Bundle b) {
         super.onCreate(b);
@@ -292,6 +293,6 @@ public class MainActivity extends Activity implements TextureView.SurfaceTexture
     @Override public void onSurfaceTextureSizeChanged(SurfaceTexture st,int w,int h){if(player!=null)fitVideo(player.getVideoWidth(),player.getVideoHeight());}
     @Override public boolean onSurfaceTextureDestroyed(SurfaceTexture st){releasePlayer();return true;}
     @Override public void onSurfaceTextureUpdated(SurfaceTexture st){}
-    @Override protected void onPause(){super.onPause();speedLocked=false;if(player!=null){try{player.setPlaybackParams(new PlaybackParams().setSpeed(1f));}catch(Exception ignored){}player.pause();}}
-    @Override protected void onResume(){super.onResume();speedLocked=false;if(player!=null){try{player.setPlaybackParams(new PlaybackParams().setSpeed(1f));}catch(Exception ignored){}player.start();}}
+    @Override protected void onPause(){super.onPause();speedLocked=false;resumePlaybackAfterPause=false;if(player!=null){resumePlaybackAfterPause=player.isPlaying();try{player.setPlaybackParams(new PlaybackParams().setSpeed(1f));}catch(Exception ignored){}player.pause();}}
+    @Override protected void onResume(){super.onResume();speedLocked=false;if(player!=null&&resumePlaybackAfterPause){try{player.setPlaybackParams(new PlaybackParams().setSpeed(1f));}catch(Exception ignored){}player.start();}resumePlaybackAfterPause=false;}
 }
