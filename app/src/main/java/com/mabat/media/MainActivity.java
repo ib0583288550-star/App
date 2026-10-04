@@ -20,7 +20,9 @@ public class MainActivity extends Activity implements TextureView.SurfaceTexture
     FrameLayout viewer;
     ImageView picture;
     TextureView movie;
-    TextView like, share, save, count, status, speed;
+    TextView like, share, save, count, status, speed, timeText;
+    SeekBar seekBar;
+    Runnable progressUpdater;
     ArrayList<Uri> roots = new ArrayList<>(), items = new ArrayList<>();
     int pos = 0;
     float downX, downY;
@@ -48,6 +50,7 @@ public class MainActivity extends Activity implements TextureView.SurfaceTexture
         picture=findViewById(R.id.picture); movie=findViewById(R.id.movie);
         like=findViewById(R.id.like); share=findViewById(R.id.share); save=findViewById(R.id.save);
         count=findViewById(R.id.count); status=findViewById(R.id.status); speed=findViewById(R.id.speed);
+        seekBar=findViewById(R.id.seekBar); timeText=findViewById(R.id.timeText);
         likes=getSharedPreferences("likes",0);
         movie.setSurfaceTextureListener(this);
 
@@ -58,6 +61,16 @@ public class MainActivity extends Activity implements TextureView.SurfaceTexture
         like.setOnClickListener(v->toggleLike());
         share.setOnClickListener(v->share());
         save.setOnClickListener(v->save());
+        seekBar.setOnSeekBarChangeListener(new SeekBar.OnSeekBarChangeListener(){
+            public void onProgressChanged(SeekBar b,int p,boolean fromUser){
+                if(fromUser && player!=null && player.getDuration()>0){
+                    player.seekTo((int)((long)p*player.getDuration()/1000L));
+                }
+                updateTime();
+            }
+            public void onStartTrackingTouch(SeekBar b){}
+            public void onStopTrackingTouch(SeekBar b){}
+        });
 
         movie.setOnTouchListener((v,e)->handleTouch(e));
         picture.setOnTouchListener((v,e)->handleTouch(e));
@@ -205,7 +218,7 @@ public class MainActivity extends Activity implements TextureView.SurfaceTexture
             player.setSurface(new android.view.Surface(st));
             player.setLooping(true);
             player.setOnVideoSizeChangedListener((mp,w,h)->fitVideo(w,h));
-            player.setOnPreparedListener(mp->{fitVideo(mp.getVideoWidth(),mp.getVideoHeight());mp.start();});
+            player.setOnPreparedListener(mp->{fitVideo(mp.getVideoWidth(),mp.getVideoHeight());mp.start();updateTime();startProgressUpdater();});
             player.prepareAsync();
         }catch(Exception e){toast("הסרטון לא ניתן להפעלה");}
     }
@@ -213,18 +226,30 @@ public class MainActivity extends Activity implements TextureView.SurfaceTexture
     void fitVideo(int vw,int vh){
         if(vw<=0||vh<=0)return;
         int sw=movie.getWidth(),sh=movie.getHeight(); if(sw<=0||sh<=0)return;
-        // Fill the entire screen. The video is enlarged as much as needed to cover
-        // the whole viewer, preserving its aspect ratio. This removes the black
-        // frame/empty margins; only unavoidable edge cropping remains.
-        float scale=Math.max((float)sw/vw,(float)sh/vh);
-        // Scale around the exact center of the TextureView. Do not add a second
-        // translation: scaling around center already keeps the video centered.
+        // True edge-to-edge fill: map the complete video rectangle exactly onto
+        // the complete TextureView rectangle. This intentionally does not preserve
+        // aspect ratio, so there can be no black bars at the top/bottom or sides.
         Matrix m=new Matrix();
-        m.setScale(scale,scale,sw/2f,sh/2f);
+        m.setRectToRect(new android.graphics.RectF(0,0,vw,vh),
+                        new android.graphics.RectF(0,0,sw,sh),
+                        Matrix.ScaleToFit.FILL);
         movie.setTransform(m);
     }
 
-    void releasePlayer(){if(player!=null){try{player.stop();}catch(Exception ignored){}player.release();player=null;}}
+    void updateTime(){
+        if(player==null){seekBar.setProgress(0);timeText.setText("00:00 / 00:00");return;}
+        int d=Math.max(0,player.getDuration()), p=Math.max(0,player.getCurrentPosition());
+        seekBar.setProgress(d>0?(int)((long)p*1000/d):0);
+        timeText.setText(formatTime(p)+" / "+formatTime(d));
+    }
+    String formatTime(int ms){int s=Math.max(0,ms/1000);return String.format(java.util.Locale.US,"%02d:%02d",s/60,s%60);}
+    void startProgressUpdater(){
+        if(progressUpdater!=null)handler.removeCallbacks(progressUpdater);
+        progressUpdater=()->{updateTime();if(player!=null)handler.postDelayed(progressUpdater,250);};
+        handler.post(progressUpdater);
+    }
+
+    void releasePlayer(){if(progressUpdater!=null)handler.removeCallbacks(progressUpdater);progressUpdater=null;if(player!=null){try{player.stop();}catch(Exception ignored){}player.release();player=null;}if(seekBar!=null)seekBar.setProgress(0);if(timeText!=null)timeText.setText("00:00 / 00:00");}
 
     void next(){if(!items.isEmpty()){pos=(pos+1)%items.size();render();}}
     void prev(){if(!items.isEmpty()){pos=(pos-1+items.size())%items.size();render();}}
