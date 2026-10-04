@@ -205,7 +205,10 @@ public class MainActivity extends Activity implements TextureView.SurfaceTexture
     void fitVideo(int vw,int vh){
         if(vw<=0||vh<=0)return;
         int sw=movie.getWidth(),sh=movie.getHeight(); if(sw<=0||sh<=0)return;
-        float scale=Math.min((float)sw/vw,(float)sh/vh);
+        // Fill the entire screen. The video is enlarged as much as needed to cover
+        // the whole viewer, preserving its aspect ratio. This removes the black
+        // frame/empty margins; only unavoidable edge cropping remains.
+        float scale=Math.max((float)sw/vw,(float)sh/vh);
         float dx=(sw-vw*scale)/2f,dy=(sh-vh*scale)/2f;
         Matrix m=new Matrix();m.setScale(scale,scale,sw/2f,sh/2f);m.postTranslate(dx,dy);movie.setTransform(m);
     }
