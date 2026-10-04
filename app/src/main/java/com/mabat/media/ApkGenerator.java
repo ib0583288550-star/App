@@ -147,7 +147,10 @@ public final class ApkGenerator {
     }
 
     private static void copy(InputStream in,OutputStream out,byte[] buf)throws IOException{
-        try(InputStream x=in){int n;while((n=x.read(buf))>0)out.write(buf,0,n);}
+        int n;
+        while((n=in.read(buf))>0) out.write(buf,0,n);
     }
-    private static void copy(FileInputStream in,OutputStream out,byte[] buf)throws IOException{copy((InputStream)in,out,buf);}
+    private static void copy(FileInputStream in,OutputStream out,byte[] buf)throws IOException{
+        try(FileInputStream x=in){ copy((InputStream)x,out,buf); }
+    }
 }
