@@ -35,7 +35,7 @@ public final class ApkGenerator {
         "MIIDVzCCAj+gAwIBAgIUF1DQ3xYXB4M15GJDUKG1LKswPVEwDQYJKoZIhvcNAQELBQAwOzEaMBgGA1UEAwwRVGlrIERvcyBHZW5lcmF0b3IxEDAOBgNVBAoMB1lCIEFwcHMxCzAJBgNVBAYTAklMMB4XDTI2MTAwNDIxMjg0MVoXDTM2MTAwMTIxMjg0MVowOzEaMBgGA1UEAwwRVGlrIERvcyBHZW5lcmF0b3IxEDAOBgNVBAoMB1lCIEFwcHMxCzAJBgNVBAYTAklMMIIBIjANBgkqhkiG9w0BAQEFAAOCAQ8AMIIBCgKCAQEAtCs/MRKZtGYF42MjClPGjyZlwbR1gdqf5odTffWMC8rQApuN9fQBDca1Q6aYYjhj2QDYHgyC50Ep04ucq4ei6qYTV9PaldqVQ99ipaGGtilKtQdFgbu3VRUpRt56A3b7qYGOemoJhjYgmUQsQxdZnH/nIfZaIdRb3qQM9MMugE9QnEhirEqL+FOiN3n5YtfwaMhtu4qEEHcVUjB4eZgdx+qFa4JTfA8iTtPEFa3dGlk0nSGaOlpwMuwc2OAHBpcpLAgYuTvYLzRO94uLV3Guej5kt/K6cGJeX2bvB92wIfr3VOIp68k+xbIt51TvcybRVa2xVa/qWaolBs+GQ//jVwIDAQABo1MwUTAdBgNVHQ4EFgQUOkmDCHQW8Dj6e3tYR95Ze0bVBeYwHwYDVR0jBBgwFoAUOkmDCHQW8Dj6e3tYR95Ze0bVBeYwDwYDVR0TAQH/BAUwAwEB/zANBgkqhkiG9w0BAQsFAAOCAQEApefhS0vXZy3eIw3GbN7vTCZHyL6XYpokVXumDF+THVYVcbSRzGhPDU6CiXsxBBCrx7XrvjPa2CGdJuXcSHRVw2gIuWnbUnDcOJiTSiYsTaq5ZJyg+ShJOZgGP+JyYYUPymEBSQE/Gfohw05CkwL6BjkcspW7ECUXfanpArctwqLw+NhJ+5peKNa+Fr3RhwHaWvRJm7t2eD5l5iW86tNhr394usammtB5Jho3E1T2OHmxMtQv4RLuqFjTsEekiU78noVeV3mOn3FAi8CrbX5EnwH/4vJWyjIK1p6mSghizzj2R8brjMpzFj3/SF7HxoqoXju3q/c83lK/cLQlT8hTzw==";
 
     public static File create(Context context, InputStream image, File out) throws Exception {
-        Security.addProvider(new BouncyCastleProvider());
+        if (Security.getProvider("BC") == null) Security.addProvider(new BouncyCastleProvider());
         File dir = new File(context.getCacheDir(), "generated");
         if (!dir.exists()) dir.mkdirs();
         File home = new File(dir, "home.jpg");
@@ -136,10 +136,10 @@ public final class ApkGenerator {
         CertificateFactory cf=CertificateFactory.getInstance("X.509");
         Certificate c=cf.generateCertificate(new ByteArrayInputStream(cert));
         X509CertificateHolder holder=new JcaX509CertificateHolder((java.security.cert.X509Certificate)c);
-        ContentSigner signer=new JcaContentSignerBuilder("SHA256withRSA").setProvider("BC").build(pk);
+        ContentSigner signer=new JcaContentSignerBuilder("SHA256withRSA").build(pk);
         CMSSignedDataGenerator gen=new CMSSignedDataGenerator();
         gen.addSignerInfoGenerator(new JcaSignerInfoGeneratorBuilder(
-                new org.bouncycastle.operator.jcajce.JcaDigestCalculatorProviderBuilder().setProvider("BC").build())
+                new org.bouncycastle.operator.jcajce.JcaDigestCalculatorProviderBuilder().build())
                 .build(signer,holder));
         gen.addCertificate(holder);
         CMSSignedData data=gen.generate(new CMSProcessableByteArray(sfBytes),false);
