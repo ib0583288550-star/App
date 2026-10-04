@@ -44,7 +44,7 @@ jobs:
           cp app/src/tikdosTemplate/res/drawable/logo_tikdos.png app/src/tikdosTemplate/assets/tikdos_home.jpg
 
       - name: Build clean Tik Dos template
-        run: gradle tikdosTemplateDebug --stacktrace
+        run: gradle assembleTikdosTemplateDebug --stacktrace
 
       - name: Embed template into installer
         run: |
@@ -52,7 +52,7 @@ jobs:
           cp app/build/outputs/apk/tikdosTemplate/debug/app-tikdosTemplate-debug.apk app/src/installer/assets/tikdos-template.apk
 
       - name: Build installer
-        run: gradle installerDebug --stacktrace
+        run: gradle assembleInstallerDebug --stacktrace
 
       - name: Upload installer APK
         uses: actions/upload-artifact@v4
