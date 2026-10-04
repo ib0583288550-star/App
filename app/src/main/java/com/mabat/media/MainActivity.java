@@ -79,7 +79,7 @@ public class MainActivity extends Activity implements TextureView.SurfaceTexture
         movie.setOnTouchListener((v,e)->handleTouch(e));
         picture.setOnTouchListener((v,e)->handleTouch(e));
         viewer.setOnTouchListener((v,e)->handleTouch(e));
-        if(!prefs.getBoolean("zoomConfigured",false)) handler.postDelayed(this::showFirstZoomSetup,350);
+        if(!prefs.getBoolean("imageConfigured",false)) handler.postDelayed(this::showFirstImageSetup,350); else if(!prefs.getBoolean("zoomConfigured",false)) handler.postDelayed(this::showFirstZoomSetup,350);
     }
 
     boolean handleTouch(MotionEvent e) {
@@ -167,22 +167,47 @@ public class MainActivity extends Activity implements TextureView.SurfaceTexture
             .setNegativeButton("ביטול",null).show();
     }
 
+    int contrastTextColor(int color){
+        int a=Color.alpha(color), r=Color.red(color), g=Color.green(color), b=Color.blue(color);
+        double lum=(0.299*r+0.587*g+0.114*b)/255.0;
+        return (a<150 || lum>0.62) ? Color.BLACK : Color.WHITE;
+    }
+
     void applyAccent(int color){
         prefs.edit().putInt("accentColor",color).apply();
+        int fg=contrastTextColor(color);
         int[] ids={R.id.add,R.id.settings,R.id.start};
-        for(int id:ids){View v=findViewById(id);if(v instanceof Button)((Button)v).setBackgroundTintList(android.content.res.ColorStateList.valueOf(color));}
-        if(seekBar!=null){seekBar.setProgressTintList(android.content.res.ColorStateList.valueOf(color));seekBar.setThumbTintList(android.content.res.ColorStateList.valueOf(color));}
+        for(int id:ids){
+            View v=findViewById(id);
+            if(v instanceof Button){
+                Button b=(Button)v;
+                b.setBackgroundTintList(android.content.res.ColorStateList.valueOf(color));
+                b.setTextColor(fg);
+            }
+        }
+        TextView title=findViewById(R.id.homeTitle), sub=findViewById(R.id.homeSubtitle), foot=findViewById(R.id.homeFooter);
+        if(title!=null) title.setTextColor(fg);
+        if(sub!=null) sub.setTextColor(fg);
+        if(foot!=null) foot.setTextColor(fg);
+        if(seekBar!=null){
+            seekBar.setProgressTintList(android.content.res.ColorStateList.valueOf(color));
+            seekBar.setThumbTintList(android.content.res.ColorStateList.valueOf(color));
+        }
     }
     void showColorSettings(){
+        final int original=prefs.getInt("accentColor",0xFF7C4DFF);
         final int[] colors={0xFF7C4DFF,0xFF3F51B5,0xFF2196F3,0xFF00BCD4,0xFF00BFA5,0xFF4CAF50,0xFFCDDC39,0xFFFFEB3B,0xFFFFC107,0xFFFF9800,0xFFFF5722,0xFFEF5350,0xFFE91E63,0xFF9C27B0,0xFFFFFFFF,0xFFBDBDBD,0xFF607D8B,0xFF212121};
         LinearLayout box=new LinearLayout(this);box.setOrientation(LinearLayout.VERTICAL);box.setPadding(18,8,18,8);
-        TextView hint=new TextView(this);hint.setText("בחר עיגול צבעוני — השינוי חל מיד");hint.setTextColor(0xFF888896);hint.setGravity(Gravity.CENTER);hint.setPadding(0,0,0,12);box.addView(hint);
+        TextView hint=new TextView(this);hint.setText("בחר צבע — התצוגה משתנה מיד");hint.setTextColor(0xFF888896);hint.setGravity(Gravity.CENTER);hint.setPadding(0,0,0,12);box.addView(hint);
         LinearLayout grid=new LinearLayout(this);grid.setOrientation(LinearLayout.VERTICAL);
         for(int row=0;row<3;row++){
             LinearLayout line=new LinearLayout(this);line.setGravity(Gravity.CENTER);
             for(int col=0;col<6;col++){
                 int c=colors[row*6+col];
-                TextView dot=new TextView(this);dot.setText("");android.graphics.drawable.GradientDrawable bg=new android.graphics.drawable.GradientDrawable();bg.setShape(android.graphics.drawable.GradientDrawable.OVAL);bg.setColor(c);bg.setStroke(2,0x66FFFFFF);dot.setBackground(bg);
+                TextView dot=new TextView(this);
+                android.graphics.drawable.GradientDrawable bg=new android.graphics.drawable.GradientDrawable();
+                bg.setShape(android.graphics.drawable.GradientDrawable.OVAL);bg.setColor(c);bg.setStroke(2,0x66000000);
+                dot.setBackground(bg);
                 LinearLayout.LayoutParams lp=new LinearLayout.LayoutParams(48,48);lp.setMargins(7,7,7,7);line.addView(dot,lp);
                 final int chosen=c;dot.setOnClickListener(v->applyAccent(chosen));
             }
@@ -190,23 +215,43 @@ public class MainActivity extends Activity implements TextureView.SurfaceTexture
         }
         box.addView(grid);
         Button custom=new Button(this);custom.setText("＋ צבע מותאם אישית");custom.setAllCaps(false);custom.setOnClickListener(v->showCustomColorDialog());box.addView(custom);
-        TextView alphaHint=new TextView(this);alphaHint.setText("שקיפות זמינה בצבע מותאם אישית");alphaHint.setTextColor(0xFF888896);alphaHint.setTextSize(12);alphaHint.setGravity(Gravity.CENTER);box.addView(alphaHint);
-        new AlertDialog.Builder(this).setTitle("🎨 צבעי טיק דוס").setView(box).setPositiveButton("סגור",null).show();
+        TextView alphaHint=new TextView(this);alphaHint.setText("בצבע מותאם אישית אפשר גם שקיפות");alphaHint.setTextColor(0xFF888896);alphaHint.setTextSize(12);alphaHint.setGravity(Gravity.CENTER);box.addView(alphaHint);
+        new AlertDialog.Builder(this).setTitle("🎨 צבעי טיק דוס").setView(box)
+            .setPositiveButton("שמור וסגור",null)
+            .setNegativeButton("ביטול",(d,w)->applyAccent(original)).show();
     }
 
     void showCustomColorDialog(){
+        final int original=prefs.getInt("accentColor",0xFF7C4DFF);
         LinearLayout box=new LinearLayout(this);box.setOrientation(LinearLayout.VERTICAL);box.setPadding(20,8,20,8);
         TextView preview=new TextView(this);preview.setText("תצוגה");preview.setGravity(Gravity.CENTER);preview.setTextColor(Color.WHITE);
-        LinearLayout.LayoutParams pp=new LinearLayout.LayoutParams(-1,70);pp.setMargins(0,0,0,10);box.addView(preview,pp);
+        box.addView(preview,new LinearLayout.LayoutParams(-1,70));
         SeekBar hue=new SeekBar(this);hue.setMax(360);hue.setProgress(260);box.addView(hue);
         TextView hueText=new TextView(this);hueText.setText("גוון");hueText.setGravity(Gravity.CENTER);box.addView(hueText);
         SeekBar alpha=new SeekBar(this);alpha.setMax(255);alpha.setProgress(255);box.addView(alpha);
-        TextView alphaText=new TextView(this);alphaText.setText("שקיפות: 100%");alphaText.setGravity(Gravity.CENTER);box.addView(alphaText);
-        Runnable refresh=()->{float[] hsv={hue.getProgress(),0.72f,1f};int c=Color.HSVToColor(alpha.getProgress(),hsv);preview.setBackgroundColor(c);alphaText.setText("שקיפות: "+Math.round(alpha.getProgress()*100f/255f)+"%");};
+        TextView alphaText=new TextView(this);alphaText.setText("אטימות: 100%");alphaText.setGravity(Gravity.CENTER);box.addView(alphaText);
+        Runnable refresh=()->{
+            float[] hsv={hue.getProgress(),0.72f,1f};int c=Color.HSVToColor(alpha.getProgress(),hsv);
+            preview.setBackgroundColor(c);preview.setTextColor(contrastTextColor(c));
+            alphaText.setText("אטימות: "+Math.round(alpha.getProgress()*100f/255f)+"%");
+        };
         hue.setOnSeekBarChangeListener(new SeekBar.OnSeekBarChangeListener(){public void onProgressChanged(SeekBar b,int p,boolean f){refresh.run();}public void onStartTrackingTouch(SeekBar b){}public void onStopTrackingTouch(SeekBar b){}});
         alpha.setOnSeekBarChangeListener(new SeekBar.OnSeekBarChangeListener(){public void onProgressChanged(SeekBar b,int p,boolean f){refresh.run();}public void onStartTrackingTouch(SeekBar b){}public void onStopTrackingTouch(SeekBar b){}});
         refresh.run();
-        AlertDialog dlg=new AlertDialog.Builder(this).setTitle("צבע מותאם אישית").setView(box).setNegativeButton("ביטול",null).setPositiveButton("החל",(d,w)->{float[] hsv={hue.getProgress(),0.72f,1f};applyAccent(Color.HSVToColor(alpha.getProgress(),hsv));}).create();
+        AlertDialog dlg=new AlertDialog.Builder(this).setTitle("צבע מותאם אישית").setView(box).setNegativeButton("ביטול",(d,w)->applyAccent(original)).setPositiveButton("שמור",null).create();
+        dlg.setOnShowListener(x->dlg.getButton(AlertDialog.BUTTON_POSITIVE).setOnClickListener(v->{float[] hsv={hue.getProgress(),0.72f,1f};applyAccent(Color.HSVToColor(alpha.getProgress(),hsv));dlg.dismiss();}));
+        dlg.show();
+    }
+
+    void showFirstImageSetup(){
+        LinearLayout box=new LinearLayout(this);box.setOrientation(LinearLayout.VERTICAL);box.setPadding(20,8,20,8);
+        ImageView preview=new ImageView(this);preview.setScaleType(ImageView.ScaleType.CENTER_CROP);preview.setImageResource(R.drawable.logo_tikdos);
+        box.addView(preview,new LinearLayout.LayoutParams(-1,230));
+        TextView info=new TextView(this);info.setText("בפעם הראשונה אפשר לבחור תמונה שתופיע במסך הפתיחה של טיק דוס.");info.setTextSize(16);info.setGravity(Gravity.CENTER);info.setPadding(0,12,0,8);box.addView(info);
+        Button choose=new Button(this);choose.setText("בחר תמונה");choose.setAllCaps(false);box.addView(choose);
+        AlertDialog dlg=new AlertDialog.Builder(this).setTitle("ברוכים הבאים לטיק דוס").setView(box).setNegativeButton("דלג",null).create();
+        choose.setOnClickListener(v->startActivityForResult(new Intent(Intent.ACTION_OPEN_DOCUMENT).setType("image/*").addCategory(Intent.CATEGORY_OPENABLE).addFlags(Intent.FLAG_GRANT_READ_URI_PERMISSION|Intent.FLAG_GRANT_PERSISTABLE_URI_PERMISSION),8));
+        dlg.setOnDismissListener(d->{if(!prefs.getBoolean("imageConfigured",false)) prefs.edit().putBoolean("imageConfigured",true).apply(); if(!prefs.getBoolean("zoomConfigured",false)) handler.postDelayed(this::showFirstZoomSetup,250);});
         dlg.show();
     }
 
