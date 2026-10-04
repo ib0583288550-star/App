@@ -225,21 +225,16 @@ public class MainActivity extends Activity implements TextureView.SurfaceTexture
 
     void fitVideo(int vw,int vh){
         if(vw<=0||vh<=0)return;
-        int sw=movie.getWidth(),sh=movie.getHeight(); if(sw<=0||sh<=0)return;
-        // TikTok/Instagram-style full-screen crop: preserve the video's aspect
-        // ratio while scaling it until every edge of the screen is covered.
-        // Any excess is cropped, so no black bars can appear.
-        float scale=Math.max((float)sw/vw,(float)sh/vh);
-        float sx=scale, sy=scale;
-        float scaledW=vw*sx, scaledH=vh*sy;
-        float dx=(sw-scaledW)/2f;
-        float dy=(sh-scaledH)/2f;
+        int sw=movie.getWidth(),sh=movie.getHeight();
+        if(sw<=0||sh<=0)return;
+
+        // Fill the entire screen with the complete video frame.
+        // No crop and no black bars: the source is stretched independently
+        // in width and height to exactly match the TextureView.
         Matrix m=new Matrix();
-        m.setScale(sx,sy);
-        m.postTranslate(dx,dy);
+        m.setScale((float)sw/(float)vw,(float)sh/(float)vh);
         movie.setTransform(m);
     }
-
     void updateTime(){
         if(player==null){seekBar.setProgress(0);timeText.setText("00:00 / 00:00");return;}
         int d=Math.max(0,player.getDuration()), p=Math.max(0,player.getCurrentPosition());
