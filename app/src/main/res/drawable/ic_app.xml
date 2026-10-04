@@ -1,7 +1,32 @@
-<vector xmlns:android="http://schemas.android.com/apk/res/android" android:width="108dp" android:height="108dp" android:viewportWidth="108" android:viewportHeight="108">
-<path android:fillColor="#17141F" android:pathData="M0,0h108v108h-108z"/>
-<path android:fillColor="#7C4DFF" android:pathData="M24,28h60c9,0 13,9 8,16L80,62c-5,8-16,8-21,0L54,56l-5,7c-5,8-16,8-21,0L16,44c-5-7-1-16,8-16z"/>
-<path android:fillColor="#64E6D3" android:pathData="M31,39a8,8 0,1 0,0 16a8,8 0,1 0,0 -16M77,39a8,8 0,1 0,0 16a8,8 0,1 0,0 -16"/>
-<path android:fillColor="#FFFFFF" android:pathData="M34,44a3,3 0,1 0,0 6a3,3 0,1 0,0 -6M80,44a3,3 0,1 0,0 6a3,3 0,1 0,0 -6"/>
-<path android:fillColor="#FF6685" android:pathData="M45,66c6,5 12,5 18,0c-2,11-16,11-18,0z"/>
-</vector>
+<layer-list xmlns:android="http://schemas.android.com/apk/res/android">
+    <item>
+        <shape android:shape="rectangle">
+            <gradient android:angle="135" android:startColor="#F58529" android:centerColor="#DD2A7B" android:endColor="#8134AF"/>
+            <corners android:radius="24dp"/>
+        </shape>
+    </item>
+    <item android:left="20dp" android:top="20dp" android:right="20dp" android:bottom="20dp">
+        <shape android:shape="rectangle">
+            <stroke android:width="5dp" android:color="#FFFFFF"/>
+            <corners android:radius="20dp"/>
+        </shape>
+    </item>
+    <item android:left="43dp" android:top="43dp" android:right="43dp" android:bottom="43dp">
+        <shape android:shape="oval">
+            <stroke android:width="4dp" android:color="#FFFFFF"/>
+        </shape>
+    </item>
+    <item android:left="68dp" android:top="28dp" android:right="28dp" android:bottom="68dp">
+        <shape android:shape="oval">
+            <solid android:color="#FFFFFF"/>
+        </shape>
+    </item>
+    <item android:left="48dp" android:top="48dp" android:right="48dp" android:bottom="48dp">
+        <rotate android:fromDegrees="-45" android:pivotX="50%" android:pivotY="50%">
+            <shape android:shape="rectangle">
+                <solid android:color="#111111"/>
+                <corners android:radius="2dp"/>
+            </shape>
+        </rotate>
+    </item>
+</layer-list>
