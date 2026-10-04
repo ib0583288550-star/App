@@ -143,7 +143,7 @@ public class InstallerActivity extends Activity {
             i.addFlags(Intent.FLAG_GRANT_READ_URI_PERMISSION|Intent.FLAG_ACTIVITY_NEW_TASK);
             startActivity(i);
         }catch(Exception e){
-            new AlertDialog.Builder(this).setTitle("ה־APK נוצר").setMessage("הקובץ מוכן. לחץ על כפתור \\"התקן את טיק דוס\\" כדי לפתוח את ההתקנה.").setPositiveButton("סגור",null).show();
+            new AlertDialog.Builder(this).setTitle("ה־APK נוצר").setMessage("הקובץ מוכן. לחץ על כפתור התקן את טיק דוס כדי לפתוח את ההתקנה.").setPositiveButton("סגור",null).show();
         }
     }
 }
