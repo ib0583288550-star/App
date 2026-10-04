@@ -67,10 +67,12 @@ public class InstallerActivity extends Activity {
         build.setText("צור APK של טיק דוס");
         build.setAllCaps(false);
         build.setEnabled(false);
+
         install=new Button(this);
         install.setText("⬇ התקן את טיק דוס");
         install.setAllCaps(false);
         install.setEnabled(false);
+
         LinearLayout.LayoutParams ip=new LinearLayout.LayoutParams(-1,56); ip.topMargin=10;
         root.addView(install,ip);
         LinearLayout.LayoutParams bp=new LinearLayout.LayoutParams(-1,56); bp.topMargin=10;
@@ -85,7 +87,10 @@ public class InstallerActivity extends Activity {
         setContentView(scroll);
         choose.setOnClickListener(v->pickImage());
         build.setOnClickListener(v->createApk());
-        install.setOnClickListener(v->{ if(generatedApk!=null && generatedApk.exists()) installApk(generatedApk); else Toast.makeText(this,"קודם צור את ה־APK",Toast.LENGTH_SHORT).show(); });
+        install.setOnClickListener(v->{
+            if(generatedApk!=null && generatedApk.exists()) installApk(generatedApk);
+            else Toast.makeText(this,"קודם צור את ה־APK",Toast.LENGTH_SHORT).show();
+        });
     }
 
     void pickImage(){
@@ -139,11 +144,21 @@ public class InstallerActivity extends Activity {
     void installApk(File apk){
         try{
             Uri uri=FileProvider.getUriForFile(this,"com.mabat.installer.fileprovider",apk);
-            Intent i=new Intent(Intent.ACTION_INSTALL_PACKAGE);
-            i.setData(uri);
-            i.setType("application/vnd.android.package-archive");
-            i.addFlags(Intent.FLAG_GRANT_READ_URI_PERMISSION|Intent.FLAG_ACTIVITY_NEW_TASK);
-            startActivity(i);
+            Intent i=new Intent(Intent.ACTION_VIEW);
+            i.setDataAndType(uri,"application/vnd.android.package-archive");
+            i.addFlags(Intent.FLAG_GRANT_READ_URI_PERMISSION|Intent.FLAG_ACTIVITY_NEW_TASK|Intent.FLAG_ACTIVITY_CLEAR_TOP);
+            PackageManager pm=getPackageManager();
+            if(i.resolveActivity(pm)==null){
+                Intent fallback=new Intent(Intent.ACTION_INSTALL_PACKAGE);
+                fallback.setDataAndType(uri,"application/vnd.android.package-archive");
+                fallback.addFlags(Intent.FLAG_GRANT_READ_URI_PERMISSION|Intent.FLAG_ACTIVITY_NEW_TASK);
+                if(fallback.resolveActivity(pm)==null){
+                    throw new ActivityNotFoundException("לא נמצא במכשיר מסך מערכת להתקנת APK");
+                }
+                startActivity(fallback);
+            }else{
+                startActivity(i);
+            }
         }catch(Exception e){
             new AlertDialog.Builder(this).setTitle("לא ניתן לפתוח את ההתקנה").setMessage(e.getMessage()==null?e.toString():e.getMessage()).setPositiveButton("סגור",null).show();
         }
