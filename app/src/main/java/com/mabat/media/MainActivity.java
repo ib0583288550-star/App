@@ -38,8 +38,7 @@ public class MainActivity extends Activity implements TextureView.SurfaceTexture
     boolean speedLocked=false;
     SharedPreferences prefs;
     Runnable longPressRunnable;
-    boolean resumePlaybackAfterPause=false;
-    boolean wasPausedBeforePause=false;
+    boolean returningFromBackground=false;
 
     @Override public void onCreate(Bundle b) {
         super.onCreate(b);
@@ -286,7 +285,10 @@ public class MainActivity extends Activity implements TextureView.SurfaceTexture
             player.setLooping(false);
             player.setOnVideoSizeChangedListener((mp,w,h)->fitVideo(w,h));
             player.setOnCompletionListener(mp->{ if(!items.isEmpty()) next(); });
-            player.setOnPreparedListener(mp->{fitVideo(mp.getVideoWidth(),mp.getVideoHeight());if(prefs.getBoolean("autoPlay",true)) mp.start();updateTime();startProgressUpdater();if(mp.isPlaying())scheduleControlsHide();});
+            player.setOnPreparedListener(mp->{fitVideo(mp.getVideoWidth(),mp.getVideoHeight());
+                boolean startNow=prefs.getBoolean("autoPlay",true) && !returningFromBackground;
+                if(startNow) mp.start(); else {try{mp.pause();}catch(Exception ignored){}}
+                returningFromBackground=false;updateTime();startProgressUpdater();if(mp.isPlaying())scheduleControlsHide();});
             player.prepareAsync();
         }catch(Exception e){toast("הסרטון לא ניתן להפעלה");}
     }
@@ -329,7 +331,7 @@ public class MainActivity extends Activity implements TextureView.SurfaceTexture
     @Override public boolean onSurfaceTextureDestroyed(SurfaceTexture st){releasePlayer();return true;}
     @Override public void onSurfaceTextureUpdated(SurfaceTexture st){}
     @Override protected void onPause(){
-        super.onPause();speedLocked=false;
+        super.onPause();speedLocked=false;returningFromBackground=true;
         if(player!=null){try{player.pause();}catch(Exception ignored){}}
         hidePauseIndicator();
     }
