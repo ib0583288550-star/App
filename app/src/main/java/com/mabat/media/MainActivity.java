@@ -57,6 +57,7 @@ public class MainActivity extends Activity implements TextureView.SurfaceTexture
         loadRoots();
         findViewById(R.id.add).setOnClickListener(v->pick());
         findViewById(R.id.start).setOnClickListener(v->startScan());
+        findViewById(R.id.about).setOnClickListener(v->showAbout());
         findViewById(R.id.back).setOnClickListener(v->closeViewer());
         like.setOnClickListener(v->toggleLike());
         share.setOnClickListener(v->share());
@@ -264,6 +265,14 @@ public class MainActivity extends Activity implements TextureView.SurfaceTexture
             byte[] buffer=new byte[8192];int n;while((n=in.read(buffer))!=-1)os.write(buffer,0,n);in.close();os.close();toast("נשמר בגלריה");
         }catch(Exception e){toast("שמירה נכשלה");}
     }
+    void showAbout(){
+        new AlertDialog.Builder(this)
+            .setTitle("אודות")
+            .setMessage("מבט\\n\\nYB Apps")
+            .setPositiveButton("סגור",null)
+            .show();
+    }
+
     void toast(String s){Toast.makeText(this,s,Toast.LENGTH_SHORT).show();}
 
     @Override public void onSurfaceTextureAvailable(SurfaceTexture st,int w,int h){if(movie.getTag()!=null)prepareVideo((Uri)movie.getTag(),st);}
