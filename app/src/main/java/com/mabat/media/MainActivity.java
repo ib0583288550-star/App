@@ -426,6 +426,23 @@ public class MainActivity extends Activity implements TextureView.SurfaceTexture
 
     void next(){speedLocked=false;if(!items.isEmpty()){pos=(pos+1)%items.size();render();}}
     void prev(){speedLocked=false;if(!items.isEmpty()){pos=(pos-1+items.size())%items.size();render();}}
+    void showGuide(){
+        ScrollView scroll=new ScrollView(this);
+        TextView guide=new TextView(this);
+        guide.setTextSize(15);
+        guide.setTextColor(0xFF222222);
+        guide.setPadding(22,12,22,12);
+        guide.setText("📖 מדריך מלא לטיק דוס\\n\\n"+
+            "🏠 מסך הבית\\n• הלוגו למעלה הוא הלוגו של האפליקציה.\\n• ״הוסף תיקיות״ – בוחרים תיקייה מהמכשיר ואפשר להוסיף כמה.\\n• ״פתח את הפיד״ – סורק את התיקיות ומציג תמונות וסרטונים.\\n\\n"+
+            "🎬 צפייה בפיד\\n• החלקה למעלה – פריט הבא.\\n• החלקה למטה – פריט קודם.\\n• לחיצה – הפעלה או עצירה.\\n• דאבל־טאפ במרכז – הפעלה/עצירה; בצדדים – קפיצה של 10 שניות.\\n• לחיצה ארוכה – מהירות כפול 2.\\n• בסיום סרטון עוברים לפריט הבא.\\n• כפתור החזרה בפינה העליונה והשיתוף בפינה שממול.\\n\\n"+
+            "⚙️ הגדרות\\n• הסתרת כפתורים – מסתירה את הפקדים אחרי 2 שניות.\\n• דאבל־טאפ – מפעיל או מבטל את פעולות הדאבל־טאפ.\\n• לחיצה ארוכה – מפעילה או מבטלת כפול 2.\\n• נעילת כפול 2 – נועלת את המהירות בזמן לחיצה ארוכה.\\n• הפעלה אוטומטית – קובעת אם סרטון חדש יתחיל מיד.\\n• אנימציית מעבר – מעבר חלק בין פריטים.\\n• גודל סרטון – שינוי זום עם תצוגה מקדימה חיה.\\n\\n"+
+            "🎨 צבעי האפליקציה\\n• צבעים מהעיגולים משתנים מיד.\\n• אפשר צבע מותאם אישית עם גוון ואטימות.\\n• בצבעים בהירים, כולל לבן, הכיתוב הופך לשחור.\\n• ״שמור וסגור״ שומר; ״ביטול״ מחזיר את הצבע הקודם.\\n\\n"+
+            "⏸️ יציאה מהאפליקציה\\n• ביציאה הסרטון נעצר.\\n• בחזרה לאפליקציה הוא לא ממשיך אוטומטית.\\n\\n"+
+            "📤 שיתוף\\n• כפתור השיתוף משתף את הפריט שמוצג כרגע.\\n\\nℹ️ אודות\\nטיק דוס • YB Apps");
+        scroll.addView(guide);
+        new AlertDialog.Builder(this).setTitle("📖 מדריך טיק דוס").setView(scroll).setPositiveButton("סגור",null).show();
+    }
+
     void showAbout(){new AlertDialog.Builder(this).setTitle("אודות").setMessage("טיק דוס\n\nYB Apps").setPositiveButton("סגור",null).show();}
     void toast(String s){Toast.makeText(this,s,Toast.LENGTH_SHORT).show();}
 
