@@ -137,7 +137,7 @@ public class MainActivity extends Activity implements TextureView.SurfaceTexture
     void togglePlayback() {
         if (player==null) return;
         if (player.isPlaying()) player.pause(); else player.start();
-        speed.setText(player.isPlaying() ? "" : "⏸");
+        speed.setText(player.isPlaying() ? "" : "❚❚");
         speed.setVisibility(View.VISIBLE);
         if (player.isPlaying()) handler.postDelayed(()->speed.setVisibility(View.GONE),450);
     }
