@@ -10,7 +10,7 @@ android {
         applicationId 'com.mabat.media'
         minSdk 23
         targetSdk 35
-        versionCode 9
-        versionName 'v0.8'
+        versionCode 10
+        versionName 'v1.0'
     }
 }
