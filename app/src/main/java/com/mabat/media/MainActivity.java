@@ -118,7 +118,7 @@ public class MainActivity extends Activity implements TextureView.SurfaceTexture
     void setSpeed(float s) {
         if (player==null) return;
         try { player.setPlaybackParams(new PlaybackParams().setSpeed(s)); } catch(Exception ignored){}
-        speed.setText(s>1 ? "2×" : "");
+        speed.setText(s>1 ? "כפול 2" : "");
         speed.setVisibility(s>1 ? View.VISIBLE : View.GONE);
     }
 
@@ -205,7 +205,7 @@ public class MainActivity extends Activity implements TextureView.SurfaceTexture
     void fitVideo(int vw,int vh){
         if(vw<=0||vh<=0)return;
         int sw=movie.getWidth(),sh=movie.getHeight(); if(sw<=0||sh<=0)return;
-        float scale=Math.max((float)sw/vw,(float)sh/vh);
+        float scale=Math.min((float)sw/vw,(float)sh/vh);
         float dx=(sw-vw*scale)/2f,dy=(sh-vh*scale)/2f;
         Matrix m=new Matrix();m.setScale(scale,scale,sw/2f,sh/2f);m.postTranslate(dx,dy);movie.setTransform(m);
     }
