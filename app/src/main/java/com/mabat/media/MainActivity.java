@@ -102,6 +102,7 @@ public class MainActivity extends Activity implements TextureView.SurfaceTexture
     void showFirstZoomSetup(){
         LinearLayout box=new LinearLayout(this);box.setOrientation(LinearLayout.VERTICAL);box.setPadding(24,8,24,4);
         TextView info=new TextView(this);info.setText("בחר את גודל הסרטון שנוח לך. אפשר לשנות את זה אחר כך בהגדרות.");info.setTextSize(16);info.setPadding(0,0,0,10);box.addView(info);
+        DemoPreviewView demo=new DemoPreviewView(this); demo.setLayoutParams(new LinearLayout.LayoutParams(-1,360)); box.addView(demo);
         SeekBar z=new SeekBar(this);z.setMax(20);z.setProgress(8);box.addView(z);
         TextView value=new TextView(this);value.setText("גודל: 96%");value.setGravity(Gravity.CENTER);box.addView(value);
         z.setOnSeekBarChangeListener(new SeekBar.OnSeekBarChangeListener(){
@@ -221,6 +222,11 @@ public class MainActivity extends Activity implements TextureView.SurfaceTexture
             status.setText("נבחרו "+roots.size()+" תיקיות. אפשר להוסיף עוד או להתחיל לצפות.");
         }
     }
+
+    void share(){if(items.isEmpty())return;Uri u=items.get(pos);String mime=getContentResolver().getType(u);Intent i=new Intent(Intent.ACTION_SEND);i.setType(mime!=null?mime:"*/*");i.putExtra(Intent.EXTRA_STREAM,u);i.addFlags(Intent.FLAG_GRANT_READ_URI_PERMISSION);startActivity(Intent.createChooser(i,"שיתוף"));}
+    void save(){if(items.isEmpty())return;Uri src=items.get(pos);String mime=getContentResolver().getType(src);if(mime==null){toast("סוג הקובץ לא זוהה");return;}boolean vid=mime.startsWith("video/");String ext=vid?".mp4":".jpg";String name="טיק_דוס_"+System.currentTimeMillis()+ext;ContentValues v=new ContentValues();v.put(MediaStore.MediaColumns.DISPLAY_NAME,name);v.put(MediaStore.MediaColumns.MIME_TYPE,mime);v.put(MediaStore.MediaColumns.RELATIVE_PATH,vid?Environment.DIRECTORY_MOVIES+"/טיק דוס":Environment.DIRECTORY_PICTURES+"/טיק דוס");try{Uri out=getContentResolver().insert(vid?MediaStore.Video.Media.EXTERNAL_CONTENT_URI:MediaStore.Images.Media.EXTERNAL_CONTENT_URI,v);if(out==null)throw new IOException();InputStream in=getContentResolver().openInputStream(src);OutputStream os=getContentResolver().openOutputStream(out);if(in==null||os==null)throw new IOException();byte[] buf=new byte[8192];int n;while((n=in.read(buf))!=-1)os.write(buf,0,n);in.close();os.close();toast("נשמר בגלריה");}catch(Exception e){toast("שמירה נכשלה");}}
+    void showPauseIndicator(){if(pauseIndicator!=null)pauseIndicator.setVisibility(View.VISIBLE);}
+    void hidePauseIndicator(){if(pauseIndicator!=null)pauseIndicator.setVisibility(View.GONE);}
 
     void saveRoots(){StringBuilder b=new StringBuilder();for(Uri u:roots){if(b.length()>0)b.append("\n");b.append(u);}likes.edit().putString("roots",b.toString()).apply();}
     void loadRoots(){String s=likes.getString("roots","");if(!s.isEmpty())for(String x:s.split("\\n"))try{roots.add(Uri.parse(x));}catch(Exception ignored){} if(!roots.isEmpty())status.setText("נבחרו "+roots.size()+" תיקיות. אפשר להתחיל לצפות.");}
