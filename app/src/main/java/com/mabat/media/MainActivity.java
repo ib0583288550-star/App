@@ -22,7 +22,7 @@ public class MainActivity extends Activity implements TextureView.SurfaceTexture
     FrameLayout viewer;
     ImageView picture;
     TextureView movie;
-    TextView share, save, count, status, speed, timeText;
+    TextView share, count, status, speed, timeText;
     ImageView pauseIndicator;
     SeekBar seekBar;
     Runnable progressUpdater;
@@ -52,7 +52,7 @@ public class MainActivity extends Activity implements TextureView.SurfaceTexture
 
         home=findViewById(R.id.home); viewer=findViewById(R.id.viewer);
         picture=findViewById(R.id.picture); movie=findViewById(R.id.movie);
-        share=findViewById(R.id.share); save=findViewById(R.id.save);
+        share=findViewById(R.id.share);
         count=findViewById(R.id.count); status=findViewById(R.id.status); speed=findViewById(R.id.speed);
         pauseIndicator=findViewById(R.id.pauseIndicator);
         seekBar=findViewById(R.id.seekBar); timeText=findViewById(R.id.timeText);
@@ -67,7 +67,6 @@ public class MainActivity extends Activity implements TextureView.SurfaceTexture
         findViewById(R.id.settings).setOnClickListener(v->showSettings());
         findViewById(R.id.back).setOnClickListener(v->closeViewer());
         share.setOnClickListener(v->share());
-        save.setOnClickListener(v->save());
         seekBar.setOnSeekBarChangeListener(new SeekBar.OnSeekBarChangeListener(){
             public void onProgressChanged(SeekBar b,int p,boolean fromUser){
                 if(fromUser && player!=null && player.getDuration()>0) player.seekTo((int)((long)p*player.getDuration()/1000L));
@@ -175,11 +174,41 @@ public class MainActivity extends Activity implements TextureView.SurfaceTexture
         if(seekBar!=null){seekBar.setProgressTintList(android.content.res.ColorStateList.valueOf(color));seekBar.setThumbTintList(android.content.res.ColorStateList.valueOf(color));}
     }
     void showColorSettings(){
-        final int[] colors={0xFF7C4DFF,0xFF2196F3,0xFF00BFA5,0xFFFF9800,0xFFE91E63,0xFFEF5350,0xFFFFFFFF};
-        final String[] names={"סגול","כחול","טורקיז","כתום","ורוד","אדום","לבן"};
+        final int[] colors={0xFF7C4DFF,0xFF3F51B5,0xFF2196F3,0xFF00BCD4,0xFF00BFA5,0xFF4CAF50,0xFFCDDC39,0xFFFFEB3B,0xFFFFC107,0xFFFF9800,0xFFFF5722,0xFFEF5350,0xFFE91E63,0xFF9C27B0,0xFFFFFFFF,0xFFBDBDBD,0xFF607D8B,0xFF212121};
+        LinearLayout box=new LinearLayout(this);box.setOrientation(LinearLayout.VERTICAL);box.setPadding(18,8,18,8);
+        TextView hint=new TextView(this);hint.setText("בחר עיגול צבעוני — השינוי חל מיד");hint.setTextColor(0xFF888896);hint.setGravity(Gravity.CENTER);hint.setPadding(0,0,0,12);box.addView(hint);
+        LinearLayout grid=new LinearLayout(this);grid.setOrientation(LinearLayout.VERTICAL);
+        for(int row=0;row<3;row++){
+            LinearLayout line=new LinearLayout(this);line.setGravity(Gravity.CENTER);
+            for(int col=0;col<6;col++){
+                int c=colors[row*6+col];
+                TextView dot=new TextView(this);dot.setText("");android.graphics.drawable.GradientDrawable bg=new android.graphics.drawable.GradientDrawable();bg.setShape(android.graphics.drawable.GradientDrawable.OVAL);bg.setColor(c);bg.setStroke(2,0x66FFFFFF);dot.setBackground(bg);
+                LinearLayout.LayoutParams lp=new LinearLayout.LayoutParams(48,48);lp.setMargins(7,7,7,7);line.addView(dot,lp);
+                final int chosen=c;dot.setOnClickListener(v->applyAccent(chosen));
+            }
+            grid.addView(line);
+        }
+        box.addView(grid);
+        Button custom=new Button(this);custom.setText("＋ צבע מותאם אישית");custom.setAllCaps(false);custom.setOnClickListener(v->showCustomColorDialog());box.addView(custom);
+        TextView alphaHint=new TextView(this);alphaHint.setText("שקיפות זמינה בצבע מותאם אישית");alphaHint.setTextColor(0xFF888896);alphaHint.setTextSize(12);alphaHint.setGravity(Gravity.CENTER);box.addView(alphaHint);
+        new AlertDialog.Builder(this).setTitle("🎨 צבעי טיק דוס").setView(box).setPositiveButton("סגור",null).show();
+    }
+
+    void showCustomColorDialog(){
         LinearLayout box=new LinearLayout(this);box.setOrientation(LinearLayout.VERTICAL);box.setPadding(20,8,20,8);
-        for(int i=0;i<colors.length;i++){Button b=new Button(this);b.setText(names[i]);b.setAllCaps(false);b.setTextColor(0xFFFFFFFF);b.setBackgroundTintList(android.content.res.ColorStateList.valueOf(colors[i]));final int c=colors[i];b.setOnClickListener(v->{applyAccent(c);toast("הצבע נשמר");});box.addView(b);}
-        new AlertDialog.Builder(this).setTitle("🎨 צבעי האפליקציה").setMessage("בחר צבע לממשק, לכפתורים ולסרגל ההתקדמות.").setView(box).setPositiveButton("סגור",null).show();
+        TextView preview=new TextView(this);preview.setText("תצוגה");preview.setGravity(Gravity.CENTER);preview.setTextColor(Color.WHITE);
+        LinearLayout.LayoutParams pp=new LinearLayout.LayoutParams(-1,70);pp.setMargins(0,0,0,10);box.addView(preview,pp);
+        SeekBar hue=new SeekBar(this);hue.setMax(360);hue.setProgress(260);box.addView(hue);
+        TextView hueText=new TextView(this);hueText.setText("גוון");hueText.setGravity(Gravity.CENTER);box.addView(hueText);
+        SeekBar alpha=new SeekBar(this);alpha.setMax(255);alpha.setProgress(255);box.addView(alpha);
+        TextView alphaText=new TextView(this);alphaText.setText("שקיפות: 100%");alphaText.setGravity(Gravity.CENTER);box.addView(alphaText);
+        Runnable refresh=()->{float[] hsv={hue.getProgress(),0.72f,1f};int c=Color.HSVToColor(alpha.getProgress(),hsv);preview.setBackgroundColor(c);alphaText.setText("שקיפות: "+Math.round(alpha.getProgress()*100f/255f)+"%");};
+        hue.setOnSeekBarChangeListener(new SeekBar.OnSeekBarChangeListener(){public void onProgressChanged(SeekBar b,int p,boolean f){refresh.run();}public void onStartTrackingTouch(SeekBar b){}public void onStopTrackingTouch(SeekBar b){}});
+        alpha.setOnSeekBarChangeListener(new SeekBar.OnSeekBarChangeListener(){public void onProgressChanged(SeekBar b,int p,boolean f){refresh.run();}public void onStartTrackingTouch(SeekBar b){}public void onStopTrackingTouch(SeekBar b){}});
+        refresh.run();
+        new AlertDialog.Builder(this).setTitle("צבע מותאם אישית").setView(box).setNegativeButton("ביטול",null).setPositiveButton("החל",null).create();
+        AlertDialog dlg=new AlertDialog.Builder(this).setTitle("צבע מותאם אישית").setView(box).setNegativeButton("ביטול",null).setPositiveButton("החל",(d,w)->{float[] hsv={hue.getProgress(),0.72f,1f};applyAccent(Color.HSVToColor(alpha.getProgress(),hsv));}).create();
+        dlg.show();
     }
 
     boolean isVideo(){ return player!=null && player.isPlaying() || movie.getVisibility()==View.VISIBLE && items.size()>0 && isVideoUri(items.get(pos)); }
@@ -224,7 +253,7 @@ public class MainActivity extends Activity implements TextureView.SurfaceTexture
     }
 
     void share(){if(items.isEmpty())return;Uri u=items.get(pos);String mime=getContentResolver().getType(u);Intent i=new Intent(Intent.ACTION_SEND);i.setType(mime!=null?mime:"*/*");i.putExtra(Intent.EXTRA_STREAM,u);i.addFlags(Intent.FLAG_GRANT_READ_URI_PERMISSION);startActivity(Intent.createChooser(i,"שיתוף"));}
-    void save(){if(items.isEmpty())return;Uri src=items.get(pos);String mime=getContentResolver().getType(src);if(mime==null){toast("סוג הקובץ לא זוהה");return;}boolean vid=mime.startsWith("video/");String ext=vid?".mp4":".jpg";String name="טיק_דוס_"+System.currentTimeMillis()+ext;ContentValues v=new ContentValues();v.put(MediaStore.MediaColumns.DISPLAY_NAME,name);v.put(MediaStore.MediaColumns.MIME_TYPE,mime);v.put(MediaStore.MediaColumns.RELATIVE_PATH,vid?Environment.DIRECTORY_MOVIES+"/טיק דוס":Environment.DIRECTORY_PICTURES+"/טיק דוס");try{Uri out=getContentResolver().insert(vid?MediaStore.Video.Media.EXTERNAL_CONTENT_URI:MediaStore.Images.Media.EXTERNAL_CONTENT_URI,v);if(out==null)throw new IOException();InputStream in=getContentResolver().openInputStream(src);OutputStream os=getContentResolver().openOutputStream(out);if(in==null||os==null)throw new IOException();byte[] buf=new byte[8192];int n;while((n=in.read(buf))!=-1)os.write(buf,0,n);in.close();os.close();toast("נשמר בגלריה");}catch(Exception e){toast("שמירה נכשלה");}}
+
     void showPauseIndicator(){if(pauseIndicator!=null)pauseIndicator.setVisibility(View.VISIBLE);}
     void hidePauseIndicator(){if(pauseIndicator!=null)pauseIndicator.setVisibility(View.GONE);}
 
