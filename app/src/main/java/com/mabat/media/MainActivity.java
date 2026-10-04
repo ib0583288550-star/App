@@ -76,6 +76,7 @@ public class MainActivity extends Activity implements TextureView.SurfaceTexture
         movie.setOnTouchListener((v,e)->handleTouch(e));
         picture.setOnTouchListener((v,e)->handleTouch(e));
         viewer.setOnTouchListener((v,e)->handleTouch(e));
+        if(!prefs.getBoolean("zoomConfigured",false)) handler.postDelayed(this::showFirstZoomSetup,350);
     }
 
     boolean handleTouch(MotionEvent e) {
@@ -92,11 +93,40 @@ public class MainActivity extends Activity implements TextureView.SurfaceTexture
 
     void setControlsVisible(boolean visible){int v=visible?View.VISIBLE:View.GONE;findViewById(R.id.actionColumn).setVisibility(v);findViewById(R.id.bottomInfo).setVisibility(v);count.setVisibility(v);seekBar.setVisibility(v);timeText.setVisibility(v);findViewById(R.id.back).setVisibility(v);}
     void scheduleControlsHide(){if(!prefs.getBoolean("autoHide",true))return;handler.postDelayed(()->{if(player!=null&&player.isPlaying())setControlsVisible(false);},2000);}
+    void showFirstZoomSetup(){
+        LinearLayout box=new LinearLayout(this);box.setOrientation(LinearLayout.VERTICAL);box.setPadding(24,8,24,4);
+        TextView info=new TextView(this);info.setText("בחר את גודל הסרטון שנוח לך. אפשר לשנות את זה אחר כך בהגדרות.");info.setTextSize(16);info.setPadding(0,0,0,10);box.addView(info);
+        SeekBar z=new SeekBar(this);z.setMax(20);z.setProgress(8);box.addView(z);
+        TextView value=new TextView(this);value.setText("גודל: 96%");value.setGravity(Gravity.CENTER);box.addView(value);
+        z.setOnSeekBarChangeListener(new SeekBar.OnSeekBarChangeListener(){
+            public void onProgressChanged(SeekBar b,int p,boolean fromUser){value.setText("גודל: "+(88+p)+"%");}
+            public void onStartTrackingTouch(SeekBar b){}
+            public void onStopTrackingTouch(SeekBar b){}
+        });
+        new AlertDialog.Builder(this).setTitle("הגדרת גודל הסרטון").setMessage("בפעם הראשונה בלבד").setView(box)
+            .setPositiveButton("שמור",(d,w)->prefs.edit().putInt("videoZoom",88+z.getProgress()).putBoolean("zoomConfigured",true).apply())
+            .setNegativeButton("ברירת מחדל",(d,w)->prefs.edit().putInt("videoZoom",96).putBoolean("zoomConfigured",true).apply()).setCancelable(false).show();
+    }
+
+    void showZoomSetup(){
+        LinearLayout box=new LinearLayout(this);box.setOrientation(LinearLayout.VERTICAL);box.setPadding(24,8,24,4);
+        SeekBar z=new SeekBar(this);z.setMax(20);z.setProgress(Math.max(0,Math.min(20,prefs.getInt("videoZoom",96)-88)));
+        TextView value=new TextView(this);value.setText("גודל: "+(88+z.getProgress())+"%");value.setGravity(Gravity.CENTER);box.addView(z);box.addView(value);
+        z.setOnSeekBarChangeListener(new SeekBar.OnSeekBarChangeListener(){
+            public void onProgressChanged(SeekBar b,int p,boolean fromUser){value.setText("גודל: "+(88+p)+"%");}
+            public void onStartTrackingTouch(SeekBar b){}
+            public void onStopTrackingTouch(SeekBar b){}
+        });
+        new AlertDialog.Builder(this).setTitle("גודל סרטון").setView(box).setPositiveButton("שמור",(d,w)->{prefs.edit().putInt("videoZoom",88+z.getProgress()).putBoolean("zoomConfigured",true).apply();if(player!=null)fitVideo(player.getVideoWidth(),player.getVideoHeight());}).setNegativeButton("ביטול",null).show();
+    }
+
     void showSettings(){LinearLayout box=new LinearLayout(this);box.setOrientation(LinearLayout.VERTICAL);box.setPadding(24,8,24,8);
         CheckBox a=new CheckBox(this);a.setText("הסתרת כפתורים אחרי 2 שניות");a.setChecked(prefs.getBoolean("autoHide",true));
         CheckBox g=new CheckBox(this);g.setText("דאבל־טאפ: שמאל −10 | אמצע לייק | ימין +10");g.setChecked(prefs.getBoolean("gestureDoubleTap",true));
         CheckBox sp=new CheckBox(this);sp.setText("לחיצה ארוכה = כפול 2");sp.setChecked(prefs.getBoolean("longSpeed",true));
-        CheckBox l=new CheckBox(this);l.setText("החלקה למטה בזמן כפול 2 = נעילה");l.setChecked(prefs.getBoolean("speedLock",true));box.addView(a);box.addView(g);box.addView(sp);box.addView(l);
+        CheckBox l=new CheckBox(this);l.setText("החלקה למטה בזמן כפול 2 = נעילה");l.setChecked(prefs.getBoolean("speedLock",true));
+        Button zoom=new Button(this);zoom.setText("גודל סרטון: "+prefs.getInt("videoZoom",96)+"%");zoom.setOnClickListener(v->showZoomSetup());
+        box.addView(a);box.addView(g);box.addView(sp);box.addView(l);box.addView(zoom);
         new AlertDialog.Builder(this).setTitle("הגדרות").setView(box).setPositiveButton("שמור",(d,w)->prefs.edit().putBoolean("autoHide",a.isChecked()).putBoolean("gestureDoubleTap",g.isChecked()).putBoolean("longSpeed",sp.isChecked()).putBoolean("speedLock",l.isChecked()).apply()).setNegativeButton("ביטול",null).show();}
     
     boolean isVideo(){ return player!=null && player.isPlaying() || movie.getVisibility()==View.VISIBLE && items.size()>0 && isVideoUri(items.get(pos)); }
@@ -218,7 +248,8 @@ public class MainActivity extends Activity implements TextureView.SurfaceTexture
         float sx=(float)sw/(float)vw;
         float sy=(float)sh/(float)vh;
         // TextureView transform uses view-space scale: enlarge the texture to exactly fill the screen.
-        m.setScale(((float)vw/(float)sw)*0.96f,(float)vh/(float)sh,sw/2f,sh/2f);
+        float zoom=prefs.getInt("videoZoom",96)/100f;
+        m.setScale(((float)vw/(float)sw)*zoom,((float)vh/(float)sh)*zoom,sw/2f,sh/2f);
         movie.setTransform(m);
     }
 
@@ -243,15 +274,15 @@ public class MainActivity extends Activity implements TextureView.SurfaceTexture
     void share(){if(items.isEmpty())return;Uri u=items.get(pos);String mime=getContentResolver().getType(u);Intent i=new Intent(Intent.ACTION_SEND);i.setType(mime!=null?mime:"*/*");i.putExtra(Intent.EXTRA_STREAM,u);i.addFlags(Intent.FLAG_GRANT_READ_URI_PERMISSION);startActivity(Intent.createChooser(i,"שיתוף"));}
     void save(){
         if(items.isEmpty())return;Uri src=items.get(pos);String mime=getContentResolver().getType(src);if(mime==null){toast("סוג הקובץ לא זוהה");return;}
-        boolean vid=mime.startsWith("video/");String extension=vid?".mp4":".jpg";String name="מבט_"+System.currentTimeMillis()+extension;
+        boolean vid=mime.startsWith("video/");String extension=vid?".mp4":".jpg";String name="טיק_דוס_"+System.currentTimeMillis()+extension;
         ContentValues v=new ContentValues();v.put(MediaStore.MediaColumns.DISPLAY_NAME,name);v.put(MediaStore.MediaColumns.MIME_TYPE,mime);
-        v.put(MediaStore.MediaColumns.RELATIVE_PATH,vid?Environment.DIRECTORY_MOVIES+"/מבט":Environment.DIRECTORY_PICTURES+"/מבט");
+        v.put(MediaStore.MediaColumns.RELATIVE_PATH,vid?Environment.DIRECTORY_MOVIES+"/טיק דוס":Environment.DIRECTORY_PICTURES+"/טיק דוס");
         try{Uri out=getContentResolver().insert(vid?MediaStore.Video.Media.EXTERNAL_CONTENT_URI:MediaStore.Images.Media.EXTERNAL_CONTENT_URI,v);if(out==null)throw new IOException();
             InputStream in=getContentResolver().openInputStream(src);OutputStream os=getContentResolver().openOutputStream(out);if(in==null||os==null)throw new IOException();
             byte[] buffer=new byte[8192];int n;while((n=in.read(buffer))!=-1)os.write(buffer,0,n);in.close();os.close();toast("נשמר בגלריה");
         }catch(Exception e){toast("שמירה נכשלה");}
     }
-    void showAbout(){new AlertDialog.Builder(this).setTitle("אודות").setMessage("מבט\n\nYB Apps").setPositiveButton("סגור",null).show();}
+    void showAbout(){new AlertDialog.Builder(this).setTitle("אודות").setMessage("טיק דוס\n\nYB Apps").setPositiveButton("סגור",null).show();}
     void toast(String s){Toast.makeText(this,s,Toast.LENGTH_SHORT).show();}
 
     @Override public void onSurfaceTextureAvailable(SurfaceTexture st,int w,int h){if(movie.getTag()!=null)prepareVideo((Uri)movie.getTag(),st);}
