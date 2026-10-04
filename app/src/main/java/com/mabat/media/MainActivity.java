@@ -234,8 +234,8 @@ public class MainActivity extends Activity implements TextureView.SurfaceTexture
         // around the center so the frame cannot drift outside the view.
         Matrix m=new Matrix();
         m.setScale(
-            (float)sw/(float)vw,
-            (float)sh/(float)vh,
+            (float)vw/(float)sw,
+            (float)vh/(float)sh,
             sw/2f,
             sh/2f
         );
