@@ -10,7 +10,6 @@ import android.provider.MediaStore;
 import android.view.*;
 import android.widget.*;
 import android.graphics.Matrix;
-import android.graphics.RectF;
 import android.graphics.SurfaceTexture;
 import android.view.TextureView;
 import android.view.animation.AccelerateDecelerateInterpolator;
@@ -222,12 +221,10 @@ public class MainActivity extends Activity implements TextureView.SurfaceTexture
         int sw=movie.getWidth(),sh=movie.getHeight();
         if(sw<=0||sh<=0)return;
         Matrix m=new Matrix();
-        RectF src=new RectF(0,0,vw,vh);
-        RectF dst=new RectF(0,0,sw,sh);
-        m.setRectToRect(src,dst,Matrix.ScaleToFit.FILL);
+        float sx=(float)sw/(float)vw;
+        float sy=(float)sh/(float)vh;
+        m.setScale(sx,sy,sw/2f,sh/2f);
         movie.setTransform(m);
-        movie.setScaleX(1f);
-        movie.setScaleY(1f);
     }
 
     void updateTime(){
