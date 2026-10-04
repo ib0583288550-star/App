@@ -14,18 +14,15 @@ jobs:
     steps:
       - name: Checkout
         uses: actions/checkout@v4
-
       - name: Set up Java 17
         uses: actions/setup-java@v4
         with:
           distribution: temurin
           java-version: '17'
-
       - name: Set up Gradle
         uses: gradle/actions/setup-gradle@v4
         with:
           gradle-version: '8.7'
-
       - name: Prepare template image assets
         run: |
           mkdir -p app/src/tikdosTemplate/assets
@@ -38,29 +35,22 @@ jobs:
               return struct.pack(">I",len(d))+t+d+struct.pack(">I",zlib.crc32(t+d)&0xffffffff)
           png=b'\x89PNG\r\n\x1a\n'+chunk(b'IHDR',struct.pack(">IIBBBBB",w,h,8,6,0,0,0))+chunk(b'IDAT',zlib.compress(raw,9))+chunk(b'IEND',b'')
           open('app/src/tikdosTemplate/res/drawable/logo_tikdos.png','wb').write(png)
-          open('app/src/tikdosTemplate/assets/tikdos_home.jpg','wb').write(b'')
+          open('app/src/tikdosTemplate/assets/tikdos_home.jpg','wb').write(png)
           PY
-          rm -f app/src/tikdosTemplate/assets/tikdos_home.jpg
-          cp app/src/tikdosTemplate/res/drawable/logo_tikdos.png app/src/tikdosTemplate/assets/tikdos_home.jpg
-
       - name: Build clean Tik Dos template
         run: gradle assembleTikdosTemplateDebug --stacktrace
-
       - name: Embed template into installer
         run: |
           mkdir -p app/src/installer/assets
           cp app/build/outputs/apk/tikdosTemplate/debug/app-tikdosTemplate-debug.apk app/src/installer/assets/tikdos-template.apk
-
       - name: Build installer
         run: gradle assembleInstallerDebug --stacktrace
-
       - name: Upload installer APK
         uses: actions/upload-artifact@v4
         with:
           name: tik-dos-installer-v1.5
           path: app/build/outputs/apk/installer/debug/app-installer-debug.apk
           if-no-files-found: error
-
       - name: Upload clean template APK
         uses: actions/upload-artifact@v4
         with:
