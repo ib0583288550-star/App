@@ -7,22 +7,19 @@ import android.net.Uri;
 import android.os.*;
 import android.view.*;
 import android.widget.*;
+import androidx.core.content.FileProvider;
 import java.io.*;
 
 public class InstallerActivity extends Activity {
     ImageView preview;
     TextView status;
     Button choose, build;
-    SharedPreferences prefs;
     Uri selected;
 
     @Override public void onCreate(Bundle b) {
         super.onCreate(b);
         getWindow().setFlags(WindowManager.LayoutParams.FLAG_FULLSCREEN, WindowManager.LayoutParams.FLAG_FULLSCREEN);
-        prefs=getSharedPreferences("settings",0);
         buildUi();
-        String saved=prefs.getString("homeImageUri",null);
-        if(saved!=null){try{selected=Uri.parse(saved); preview.setImageURI(selected); status.setText("התמונה מוכנה"); build.setEnabled(true);}catch(Exception ignored){}}
     }
 
     void buildUi(){
@@ -43,7 +40,7 @@ public class InstallerActivity extends Activity {
         root.addView(title,new LinearLayout.LayoutParams(-1,-2));
 
         TextView info=new TextView(this);
-        info.setText("בחר תמונה אחת. האינסטלר ישמור אותה, יכין את טיק דוס עם התמונה, ואז יפתח את האפליקציה המקורית.");
+        info.setText("בחר תמונה אחת. האינסטלר ייצור APK חדש של טיק דוס עם התמונה בפנים ועם התמונה כאייקון.");
         info.setTextColor(0xFFBDB8C8); info.setTextSize(16); info.setGravity(Gravity.CENTER);
         info.setPadding(8,10,8,18);
         root.addView(info,new LinearLayout.LayoutParams(-1,-2));
@@ -65,7 +62,7 @@ public class InstallerActivity extends Activity {
         root.addView(choose,new LinearLayout.LayoutParams(-1,54));
 
         build=new Button(this);
-        build.setText("צור ופתח את טיק דוס");
+        build.setText("צור APK של טיק דוס");
         build.setAllCaps(false);
         build.setEnabled(false);
         LinearLayout.LayoutParams bp=new LinearLayout.LayoutParams(-1,56); bp.topMargin=10;
@@ -78,7 +75,7 @@ public class InstallerActivity extends Activity {
 
         setContentView(root);
         choose.setOnClickListener(v->pickImage());
-        build.setOnClickListener(v->createAndOpen());
+        build.setOnClickListener(v->createApk());
     }
 
     void pickImage(){
@@ -94,22 +91,48 @@ public class InstallerActivity extends Activity {
         if(r==101 && c==RESULT_OK && d!=null && d.getData()!=null){
             selected=d.getData();
             try{getContentResolver().takePersistableUriPermission(selected,Intent.FLAG_GRANT_READ_URI_PERMISSION);}catch(Exception ignored){}
-            prefs.edit().putString("homeImageUri",selected.toString()).putBoolean("imageConfigured",true).apply();
             preview.setImageURI(selected);
             status.setText("התמונה מוכנה ✓");
             build.setEnabled(true);
         }
     }
 
-    void createAndOpen(){
+    void createApk(){
         if(selected==null){Toast.makeText(this,"בחר תמונה קודם",Toast.LENGTH_SHORT).show();return;}
-        status.setText("מכין את טיק דוס…");
+        status.setText("יוצר APK חדש של טיק דוס…");
         build.setEnabled(false);
-        new Handler(Looper.getMainLooper()).postDelayed(()->{
-            Intent i=new Intent(this,MainActivity.class);
-            i.addFlags(Intent.FLAG_ACTIVITY_CLEAR_TOP|Intent.FLAG_ACTIVITY_NEW_TASK);
+        new Thread(()->{
+            try{
+                File out=new File(getCacheDir(),"generated/tik-dos.apk");
+                File dir=out.getParentFile(); if(!dir.exists()) dir.mkdirs();
+                try(InputStream in=getContentResolver().openInputStream(selected)){
+                    if(in==null) throw new IOException("לא ניתן לפתוח את התמונה");
+                    ApkGenerator.create(this,in,out);
+                }
+                runOnUiThread(()->{
+                    status.setText("טיק דוס החדש מוכן ✓");
+                    build.setEnabled(true);
+                    installApk(out);
+                });
+            }catch(Exception e){
+                runOnUiThread(()->{
+                    status.setText("יצירת ה־APK נכשלה");
+                    build.setEnabled(true);
+                    new AlertDialog.Builder(this).setTitle("לא הצלחתי ליצור APK").setMessage(e.getMessage()==null?e.toString():e.getMessage()).setPositiveButton("סגור",null).show();
+                });
+            }
+        }).start();
+    }
+
+    void installApk(File apk){
+        try{
+            Uri uri=FileProvider.getUriForFile(this,"com.mabat.installer.fileprovider",apk);
+            Intent i=new Intent(Intent.ACTION_VIEW);
+            i.setDataAndType(uri,"application/vnd.android.package-archive");
+            i.addFlags(Intent.FLAG_GRANT_READ_URI_PERMISSION|Intent.FLAG_ACTIVITY_NEW_TASK);
             startActivity(i);
-            finish();
-        },450);
+        }catch(Exception e){
+            new AlertDialog.Builder(this).setTitle("ה־APK נוצר").setMessage("הקובץ נוצר, אבל לא הצלחתי לפתוח את מסך ההתקנה. נסה לפתוח את הקובץ מתיקיית האפליקציה.").setPositiveButton("סגור",null).show();
+        }
     }
 }
