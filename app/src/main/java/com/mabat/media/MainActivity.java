@@ -1,79 +1,61 @@
-package com.mabat.media;
-
-import android.app.*;
-import android.content.*;
-import android.media.*;
-import android.net.Uri;
-import android.os.*;
-import android.provider.DocumentsContract;
-import android.provider.MediaStore;
-import android.view.*;
-import android.widget.*;
-import android.graphics.Matrix;
-import android.graphics.SurfaceTexture;
-import android.view.TextureView;
-import android.view.animation.AccelerateDecelerateInterpolator;
-import java.io.*;
-import java.util.*;
-
-public class MainActivity extends Activity implements TextureView.SurfaceTextureListener {
-    LinearLayout home;
-    FrameLayout viewer;
-    ImageView picture;
-    TextureView movie;
-    TextView like, share, save, count, status, speed, timeText;
-    SeekBar seekBar;
-    Runnable progressUpdater;
-    ArrayList<Uri> roots = new ArrayList<>(), items = new ArrayList<>();
-    int pos = 0;
-    float downX, downY;
-    long downTime;
-    boolean moved = false, longPressing = false, doubleTapPending = false;
-    Handler handler = new Handler(Looper.getMainLooper());
-    MediaPlayer player;
-    SharedPreferences likes;
-    boolean scanning = false;
-
-    @Override public void onCreate(Bundle b) {
-        super.onCreate(b);
-        getWindow().setFlags(WindowManager.LayoutParams.FLAG_FULLSCREEN, WindowManager.LayoutParams.FLAG_FULLSCREEN);
-        getWindow().getDecorView().setSystemUiVisibility(
-            View.SYSTEM_UI_FLAG_FULLSCREEN | View.SYSTEM_UI_FLAG_HIDE_NAVIGATION |
-            View.SYSTEM_UI_FLAG_IMMERSIVE_STICKY | View.SYSTEM_UI_FLAG_LAYOUT_FULLSCREEN |
-            View.SYSTEM_UI_FLAG_LAYOUT_HIDE_NAVIGATION | View.SYSTEM_UI_FLAG_LAYOUT_STABLE
-        );
-        setContentView(R.layout.activity_main);
-
-        home=findViewById(R.id.home); viewer=findViewById(R.id.viewer);
-        picture=findViewById(R.id.picture); movie=findViewById(R.id.movie);
-        like=findViewById(R.id.like); share=findViewById(R.id.share); save=findViewById(R.id.save);
-        count=findViewById(R.id.count); status=findViewById(R.id.status); speed=findViewById(R.id.speed);
-        seekBar=findViewById(R.id.seekBar); timeText=findViewById(R.id.timeText);
-        likes=getSharedPreferences("likes",0);
-        movie.setSurfaceTextureListener(this);
-
-        loadRoots();
-        findViewById(R.id.add).setOnClickListener(v->pick());
-        findViewById(R.id.start).setOnClickListener(v->startScan());
-        findViewById(R.id.back).setOnClickListener(v->closeViewer());
-        like.setOnClickListener(v->toggleLike());
-        share.setOnClickListener(v->share());
-        save.setOnClickListener(v->save());
-        seekBar.setOnSeekBarChangeListener(new SeekBar.OnSeekBarChangeListener(){
-            public void onProgressChanged(SeekBar b,int p,boolean fromUser){
-                if(fromUser && player!=null && player.getDuration()>0) player.seekTo((int)((long)p*player.getDuration()/1000L));
-                updateTime();
-            }
-            public void onStartTrackingTouch(SeekBar b){}
-            public void onStopTrackingTouch(SeekBar b){}
-        });
-
-        movie.setOnTouchListener((v,e)->handleTouch(e));
-        picture.setOnTouchListener((v,e)->handleTouch(e));
-        viewer.setOnTouchListener((v,e)->handleTouch(e));
-    }
-
     boolean handleTouch(MotionEvent e) {
+        if (e.getAction()==MotionEvent.ACTION_DOWN) {
+            downX=e.getX(); downY=e.getY(); downTime=System.currentTimeMillis(); moved=false; longPressing=false; longPressDown=false;
+            if (isVideo() && prefs.getBoolean("longSpeed",true)) handler.postDelayed(()->{
+                if (!moved && isVideo()) {
+                    longPressing=true; longPressDown=true; setSpeed(2f);
+                    speedLocked=false;
+                }
+            }, 320);
+            return true;
+        }
+        if (e.getAction()==MotionEvent.ACTION_MOVE) {
+            if (Math.abs(e.getX()-downX)>35 || Math.abs(e.getY()-downY)>35) moved=true;
+            if (longPressing && prefs.getBoolean("speedLock",true) && e.getY()-downY>90) {
+                speedLocked=true;
+                speed.setText("כפול 2 • נעול");
+                speed.setVisibility(View.VISIBLE);
+            }
+            return true;
+        }
+        if (e.getAction()==MotionEvent.ACTION_UP) {
+            handler.removeCallbacksAndMessages(null);
+            if (longPressing) {
+                if (!speedLocked) setSpeed(1f);
+                longPressing=false; longPressDown=false;
+                scheduleControlsHide();
+                return true;
+            }
+            if (moved) {
+                float d=e.getY()-downY;
+                if (Math.abs(d)>90) { if (d<0) next(); else prev(); }
+                return true;
+            }
+            long duration=System.currentTimeMillis()-downTime;
+            if (duration<300) {
+                if (doubleTapPending) {
+                    doubleTapPending=false;
+                    float x=e.getX();
+                    if (prefs.getBoolean("gestureDoubleTap",true)) {
+                        float third=viewer.getWidth()/3f;
+                        if (x<third) seekBy(-10_000);
+                        else if (x>third*2f) seekBy(10_000);
+                        else toggleLike();
+                    } else togglePlayback();
+                } else {
+                    doubleTapPending=true;
+                    handler.postDelayed(()->{
+                        if (doubleTapPending) {
+                            doubleTapPending=false;
+                            togglePlayback();
+                        }
+                    }, 240);
+                }
+            }
+            return true;
+        }
+        return true;
+    }    boolean handleTouch(MotionEvent e) {
         if (e.getAction()==MotionEvent.ACTION_DOWN) {
             downX=e.getX(); downY=e.getY(); downTime=System.currentTimeMillis(); moved=false; longPressing=false;
             if (isVideo()) handler.postDelayed(()->{ if (!moved && isVideo()) { longPressing=true; setSpeed(2f); } }, 320);
@@ -210,7 +192,7 @@ public class MainActivity extends Activity implements TextureView.SurfaceTexture
             player.setSurface(surface);
             player.setLooping(true);
             player.setOnVideoSizeChangedListener((mp,w,h)->fitVideo(w,h));
-            player.setOnPreparedListener(mp->{fitVideo(mp.getVideoWidth(),mp.getVideoHeight());mp.start();updateTime();startProgressUpdater();});
+            player.setOnPreparedListener(mp->{fitVideo(mp.getVideoWidth(),mp.getVideoHeight());mp.start();updateTime();startProgressUpdater();scheduleControlsHide();});
             player.prepareAsync();
         }catch(Exception e){toast("הסרטון לא ניתן להפעלה");}
     }
@@ -226,6 +208,42 @@ public class MainActivity extends Activity implements TextureView.SurfaceTexture
         movie.setTransform(m);
     }
 
+    void scheduleControlsHide(){
+        if(!prefs.getBoolean("autoFullscreen",true)) return;
+        controlsHidden=false;
+        setControlsVisible(true);
+        handler.postDelayed(()->{
+            if(player!=null && player.isPlaying()){
+                controlsHidden=true;
+                setControlsVisible(false);
+            }
+        },2000);
+    }
+
+    void setControlsVisible(boolean visible){
+        int v=visible?View.VISIBLE:View.GONE;
+        count.setVisibility(v);
+        findViewById(R.id.back).setVisibility(v);
+        findViewById(R.id.actionColumn).setVisibility(v);
+        findViewById(R.id.bottomInfo).setVisibility(v);
+        seekBar.setVisibility(v);
+        timeText.setVisibility(v);
+        speed.setVisibility(speedLocked?View.VISIBLE:(visible?speed.getVisibility():View.GONE));
+    }
+
+    void showSettings(){
+        LinearLayout box=new LinearLayout(this);
+        box.setOrientation(LinearLayout.VERTICAL);
+        box.setPadding(28,8,28,8);
+        CheckBox auto=new CheckBox(this); auto.setText("הסתרת כפתורים אחרי 2 שניות"); auto.setChecked(prefs.getBoolean("autoFullscreen",true)); box.addView(auto);
+        CheckBox gestures=new CheckBox(this); gestures.setText("מחוות: שמאל −10 | אמצע לייק | ימין +10"); gestures.setChecked(prefs.getBoolean("gestureDoubleTap",true)); box.addView(gestures);
+        CheckBox longSpeed=new CheckBox(this); longSpeed.setText("לחיצה ארוכה = כפול 2"); longSpeed.setChecked(prefs.getBoolean("longSpeed",true)); box.addView(longSpeed);
+        CheckBox lock=new CheckBox(this); lock.setText("החלקה למטה בזמן כפול 2 = נעילת מהירות"); lock.setChecked(prefs.getBoolean("speedLock",true)); box.addView(lock);
+        new AlertDialog.Builder(this).setTitle("הגדרות").setView(box).setPositiveButton("שמור",(d,w)->{
+            prefs.edit().putBoolean("autoFullscreen",auto.isChecked()).putBoolean("gestureDoubleTap",gestures.isChecked()).putBoolean("longSpeed",longSpeed.isChecked()).putBoolean("speedLock",lock.isChecked()).apply();
+        }).setNegativeButton("ביטול",null).show();
+    }
+
     void updateTime(){
         if(player==null){seekBar.setProgress(0);timeText.setText("00:00 / 00:00");return;}
         int d=Math.max(0,player.getDuration()), p=Math.max(0,player.getCurrentPosition());
@@ -239,10 +257,10 @@ public class MainActivity extends Activity implements TextureView.SurfaceTexture
         handler.post(progressUpdater);
     }
 
-    void releasePlayer(){if(progressUpdater!=null)handler.removeCallbacks(progressUpdater);progressUpdater=null;if(player!=null){try{player.stop();}catch(Exception ignored){}player.release();player=null;}if(seekBar!=null)seekBar.setProgress(0);if(timeText!=null)timeText.setText("00:00 / 00:00");}
+    void releasePlayer(){speedLocked=false;if(progressUpdater!=null)handler.removeCallbacks(progressUpdater);progressUpdater=null;if(player!=null){try{player.stop();}catch(Exception ignored){}player.release();player=null;}if(seekBar!=null)seekBar.setProgress(0);if(timeText!=null)timeText.setText("00:00 / 00:00");}
 
-    void next(){if(!items.isEmpty()){pos=(pos+1)%items.size();render();}}
-    void prev(){if(!items.isEmpty()){pos=(pos-1+items.size())%items.size();render();}}
+    void next(){if(!items.isEmpty()){speedLocked=false;pos=(pos+1)%items.size();render();}}
+    void prev(){if(!items.isEmpty()){speedLocked=false;pos=(pos-1+items.size())%items.size();render();}}
     void toggleLike(){if(items.isEmpty())return;Uri u=items.get(pos);boolean n=!likes.getBoolean(u.toString(),false);likes.edit().putBoolean(u.toString(),n).apply();like.setText(""); like.setAlpha(n?1f:0.65f);}
     void share(){if(items.isEmpty())return;Uri u=items.get(pos);String mime=getContentResolver().getType(u);Intent i=new Intent(Intent.ACTION_SEND);i.setType(mime!=null?mime:"*/*");i.putExtra(Intent.EXTRA_STREAM,u);i.addFlags(Intent.FLAG_GRANT_READ_URI_PERMISSION);startActivity(Intent.createChooser(i,"שיתוף"));}
     void save(){
