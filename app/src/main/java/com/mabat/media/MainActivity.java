@@ -124,11 +124,31 @@ public class MainActivity extends Activity implements TextureView.SurfaceTexture
         SeekBar z=new SeekBar(this);z.setMax(20);z.setProgress(Math.max(0,Math.min(20,prefs.getInt("videoZoom",96)-88)));
         TextView value=new TextView(this);value.setText("גודל: "+(88+z.getProgress())+"%");value.setGravity(Gravity.CENTER);box.addView(z);box.addView(value);
         z.setOnSeekBarChangeListener(new SeekBar.OnSeekBarChangeListener(){
-            public void onProgressChanged(SeekBar b,int p,boolean fromUser){value.setText("גודל: "+(88+p)+"%");}
+            public void onProgressChanged(SeekBar b,int p,boolean fromUser){value.setText("גודל: "+(88+p)+"%");demo.setScaleFactor((88+p)/100f);}
             public void onStartTrackingTouch(SeekBar b){}
             public void onStopTrackingTouch(SeekBar b){}
         });
         new AlertDialog.Builder(this).setTitle("גודל סרטון").setView(box).setPositiveButton("שמור",(d,w)->{prefs.edit().putInt("videoZoom",88+z.getProgress()).putBoolean("zoomConfigured",true).apply();if(player!=null)fitVideo(player.getVideoWidth(),player.getVideoHeight());}).setNegativeButton("ביטול",null).show();
+    }
+
+    class DemoPreviewView extends View {
+        Paint paint=new Paint(Paint.ANTI_ALIAS_FLAG);
+        float scaleFactor=1f;
+        long started=System.currentTimeMillis();
+        DemoPreviewView(Context c){super(c);paint.setTypeface(Typeface.create("sans",Typeface.BOLD));}
+        void setScaleFactor(float f){scaleFactor=f;invalidate();}
+        @Override protected void onDraw(Canvas c){
+            c.drawColor(Color.BLACK);
+            float w=getWidth(),h=getHeight();
+            c.save(); c.translate(w/2f,h/2f); c.scale(scaleFactor,scaleFactor);
+            float vw=Math.min(w*.62f,260f), vh=vw*1.78f;
+            paint.setColor(Color.rgb(35,35,45));c.drawRoundRect(-vw/2,-vh/2,vw/2,vh/2,24,24,paint);
+            float t=((System.currentTimeMillis()-started)%2200)/2200f;
+            paint.setColor(Color.rgb(124,77,255));c.drawCircle((float)Math.sin(t*Math.PI*2)*vw*.28f,(float)Math.cos(t*Math.PI*2)*vh*.22f,24,paint);
+            paint.setColor(Color.WHITE);paint.setTextAlign(Paint.Align.CENTER);paint.setTextSize(22);c.drawText("הדגמת וידאו",0,10,paint);
+            paint.setTextSize(13);paint.setColor(Color.LTGRAY);c.drawText("כך ייראה גודל הסרטון",0,35,paint);
+            c.restore();postInvalidateDelayed(40);
+        }
     }
 
     void showSettings(){
@@ -146,6 +166,20 @@ public class MainActivity extends Activity implements TextureView.SurfaceTexture
         new AlertDialog.Builder(this).setTitle("⚙ הגדרות טיק דוס").setView(box)
             .setPositiveButton("שמור",(d,w)->prefs.edit().putBoolean("autoHide",a.isChecked()).putBoolean("gestureDoubleTap",g.isChecked()).putBoolean("longSpeed",sp.isChecked()).putBoolean("speedLock",l.isChecked()).putBoolean("autoPlay",ap.isChecked()).putBoolean("transitionAnim",tr.isChecked()).apply())
             .setNegativeButton("ביטול",null).show();
+    }
+
+    void applyAccent(int color){
+        prefs.edit().putInt("accentColor",color).apply();
+        int[] ids={R.id.add,R.id.settings,R.id.start};
+        for(int id:ids){View v=findViewById(id);if(v instanceof Button)((Button)v).setBackgroundTintList(android.content.res.ColorStateList.valueOf(color));}
+        if(seekBar!=null){seekBar.setProgressTintList(android.content.res.ColorStateList.valueOf(color));seekBar.setThumbTintList(android.content.res.ColorStateList.valueOf(color));}
+    }
+    void showColorSettings(){
+        final int[] colors={0xFF7C4DFF,0xFF2196F3,0xFF00BFA5,0xFFFF9800,0xFFE91E63,0xFFEF5350,0xFFFFFFFF};
+        final String[] names={"סגול","כחול","טורקיז","כתום","ורוד","אדום","לבן"};
+        LinearLayout box=new LinearLayout(this);box.setOrientation(LinearLayout.VERTICAL);box.setPadding(20,8,20,8);
+        for(int i=0;i<colors.length;i++){Button b=new Button(this);b.setText(names[i]);b.setTextAllCaps(false);b.setTextColor(0xFFFFFFFF);b.setBackgroundTintList(android.content.res.ColorStateList.valueOf(colors[i]));final int c=colors[i];b.setOnClickListener(v->{applyAccent(c);toast("הצבע נשמר");});box.addView(b);}
+        new AlertDialog.Builder(this).setTitle("🎨 צבעי האפליקציה").setMessage("בחר צבע לממשק, לכפתורים ולסרגל ההתקדמות.").setView(box).setPositiveButton("סגור",null).show();
     }
 
     boolean isVideo(){ return player!=null && player.isPlaying() || movie.getVisibility()==View.VISIBLE && items.size()>0 && isVideoUri(items.get(pos)); }
