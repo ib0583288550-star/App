@@ -2,7 +2,7 @@
     <application>
         <activity android:name=".InstallerActivity" android:exported="false" tools:node="remove"/>
         <provider android:name="androidx.core.content.FileProvider" tools:node="remove"/>
-        <activity android:name=".MainActivity" android:exported="true">
+        <activity android:name=".MainActivity" android:exported="true" tools:replace="android:exported">
             <intent-filter>
                 <action android:name="android.intent.action.MAIN"/>
                 <category android:name="android.intent.category.LAUNCHER"/>
