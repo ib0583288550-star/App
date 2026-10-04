@@ -206,7 +206,6 @@ public class MainActivity extends Activity implements TextureView.SurfaceTexture
         hue.setOnSeekBarChangeListener(new SeekBar.OnSeekBarChangeListener(){public void onProgressChanged(SeekBar b,int p,boolean f){refresh.run();}public void onStartTrackingTouch(SeekBar b){}public void onStopTrackingTouch(SeekBar b){}});
         alpha.setOnSeekBarChangeListener(new SeekBar.OnSeekBarChangeListener(){public void onProgressChanged(SeekBar b,int p,boolean f){refresh.run();}public void onStartTrackingTouch(SeekBar b){}public void onStopTrackingTouch(SeekBar b){}});
         refresh.run();
-        new AlertDialog.Builder(this).setTitle("צבע מותאם אישית").setView(box).setNegativeButton("ביטול",null).setPositiveButton("החל",null).create();
         AlertDialog dlg=new AlertDialog.Builder(this).setTitle("צבע מותאם אישית").setView(box).setNegativeButton("ביטול",null).setPositiveButton("החל",(d,w)->{float[] hsv={hue.getProgress(),0.72f,1f};applyAccent(Color.HSVToColor(alpha.getProgress(),hsv));}).create();
         dlg.show();
     }
