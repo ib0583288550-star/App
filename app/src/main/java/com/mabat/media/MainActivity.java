@@ -288,8 +288,10 @@ public class MainActivity extends Activity implements TextureView.SurfaceTexture
 
     void startSpeedIndicator(){
         if(speed==null)return;
-        speed.setText("➤ ➤ ➤");
+        speed.setText("x2\n› › ›");
         speed.setTextDirection(View.TEXT_DIRECTION_LTR);
+        speed.setTextSize(16);
+        speed.setLineSpacing(0,0.82f);
         speed.setVisibility(View.VISIBLE);
         if(speedAnimator!=null) speedAnimator.cancel();
         speed.setAlpha(0.35f);
