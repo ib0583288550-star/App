@@ -455,7 +455,7 @@ public class MainActivity extends Activity implements TextureView.SurfaceTexture
     void updateFavoriteIcon(){
         if(favorite==null)return;
         boolean on=!items.isEmpty() && favorites.contains(items.get(pos));
-        favorite.setText("★");
+        favorite.setText(on?"★":"☆");
         favorite.setTextColor(on?0xFFFFD600:Color.WHITE);
         favorite.setTextSize(28);
     }
