@@ -114,7 +114,7 @@ public class MainActivity extends Activity implements TextureView.SurfaceTexture
                 lockGestureHandled=true;
                 speedLocked=!speedLocked;
                 setSpeed(speedLocked?2f:1f);
-                if(speedLocked) showSpeedIndicator(); else {stopSpeedIndicator();toast("נעילת כפול 2 בוטלה");}
+                if(!speedLocked){stopSpeedIndicator();toast("נעילת כפול 2 בוטלה");}
                 longPressing=false;moved=true;
             } else if(dx>35||dy>35){
                 // Normal swipes cancel the pending long press, so changing videos
