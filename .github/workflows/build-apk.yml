@@ -21,6 +21,11 @@ jobs:
         uses: gradle/actions/setup-gradle@v4
         with:
           gradle-version: "8.7"
+      - name: Fetch stable Android debug keystore
+        run: |
+          mkdir -p signing
+          curl -L --fail --silent --show-error -o signing/debug.keystore https://raw.githubusercontent.com/safe-global/safe-android/master/debug.keystore
+          keytool -list -keystore signing/debug.keystore -storepass android -alias androiddebugkey >/dev/null
       - name: Build direct Tik Dos APK
         run: gradle assembleDebug --stacktrace
       - name: Upload direct APK
