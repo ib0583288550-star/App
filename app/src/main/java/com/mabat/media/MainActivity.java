@@ -53,6 +53,7 @@ public class MainActivity extends Activity implements TextureView.SurfaceTexture
             View.SYSTEM_UI_FLAG_LAYOUT_HIDE_NAVIGATION | View.SYSTEM_UI_FLAG_LAYOUT_STABLE
         );
         setContentView(R.layout.activity_main);
+        applyScreenAdaptation();
         showOpeningAnimation();
 
         home=findViewById(R.id.home); viewer=findViewById(R.id.viewer);
@@ -106,6 +107,27 @@ public class MainActivity extends Activity implements TextureView.SurfaceTexture
 
     void setControlsVisible(boolean visible){int v=visible?View.VISIBLE:View.GONE;findViewById(R.id.actionColumn).setVisibility(v);findViewById(R.id.bottomInfo).setVisibility(v);count.setVisibility(v);timeText.setVisibility(v);findViewById(R.id.back).setVisibility(v);seekBar.setVisibility(prefs.getBoolean("showSeekBar",true)?v:View.GONE);}
     void scheduleControlsHide(){if(!prefs.getBoolean("autoHide",true))return;handler.postDelayed(()->{if(player!=null&&player.isPlaying())setControlsVisible(false);},prefs.getInt("hideDelay",2)*1000L);}
+    void applyScreenAdaptation(){
+        float density=getResources().getDisplayMetrics().density;
+        float dpW=getResources().getDisplayMetrics().widthPixels/density;
+        String mode=prefs.getString("screenAdaptation","auto");
+        float factor;
+        if("small".equals(mode)) factor=0.82f;
+        else if("large".equals(mode)) factor=1.08f;
+        else if("normal".equals(mode)) factor=1f;
+        else factor=dpW<340?0.82f:(dpW<380?0.90f:1f);
+        if(home!=null){
+            int pad=(int)(24*density*factor);
+            home.setPadding(pad,(int)(34*density*factor),pad,(int)(20*density*factor));
+            View logo=findViewById(R.id.appLogo);
+            if(logo!=null){int s=(int)(96*density*factor);logo.getLayoutParams().width=s;logo.getLayoutParams().height=s;logo.requestLayout();}
+            TextView title=findViewById(R.id.homeTitle); if(title!=null) title.setTextSize(30*factor);
+            TextView sub=findViewById(R.id.homeSubtitle); if(sub!=null) sub.setTextSize(16*factor);
+        }
+        View action=findViewById(R.id.actionColumn);
+        if(action!=null && factor<1f){ action.setScaleX(factor); action.setScaleY(factor); }
+    }
+
     void showOpeningAnimation(){
         final ViewGroup root=(ViewGroup)findViewById(android.R.id.content);
         final LinearLayout splash=new LinearLayout(this);
@@ -147,6 +169,12 @@ public class MainActivity extends Activity implements TextureView.SurfaceTexture
         Button fav=new Button(this);fav.setText("⭐ מועדפים");fav.setAllCaps(false);fav.setOnClickListener(v->{if(favorites.isEmpty()){toast("אין מועדפים עדיין");return;}items.clear();items.addAll(favorites);pos=0;openViewer();});box.addView(fav);Button colors=new Button(this);colors.setText("🎨 צבעי האפליקציה");colors.setOnClickListener(v->showColorSettings());
         Button guideBtn=new Button(this);guideBtn.setText("📖 מדריך והוראות");guideBtn.setAllCaps(false);guideBtn.setOnClickListener(v->showGuide());
         Button aboutBtn=new Button(this);aboutBtn.setText("ℹ️ אודות");aboutBtn.setAllCaps(false);aboutBtn.setOnClickListener(v->showAbout());
+        Button screenMode=new Button(this);
+        String currentMode=prefs.getString("screenAdaptation","auto");
+        screenMode.setText("התאמת מסך: "+("small".equals(currentMode)?"מסך קטן":"normal".equals(currentMode)?"מסך רגיל":"large".equals(currentMode)?"מסך גדול":"אוטומטי"));
+        screenMode.setAllCaps(false);
+        screenMode.setOnClickListener(v->{String[] opts={"אוטומטי","מסך קטן","מסך רגיל","מסך גדול"};int checked={"auto".equals(currentMode)?0:"small".equals(currentMode)?1:"normal".equals(currentMode)?2:3;new AlertDialog.Builder(this).setTitle("התאמת מסך").setSingleChoiceItems(opts,checked,(d,w)->{String m=w==0?"auto":w==1?"small":w==2?"normal":"large";prefs.edit().putString("screenAdaptation",m).apply();applyScreenAdaptation();screenMode.setText("התאמת מסך: "+opts[w]);d.dismiss();}).show();});
+        box.addView(screenMode);
         Button hideDelay=new Button(this);hideDelay.setText("זמן הסתרת כפתורים: "+prefs.getInt("hideDelay",2)+" שניות");hideDelay.setAllCaps(false);hideDelay.setOnClickListener(v->{String[] opts={"1 שנייה","2 שניות","3 שניות","4 שניות","5 שניות"};new AlertDialog.Builder(this).setTitle("אחרי כמה זמן להסתיר?").setSingleChoiceItems(opts,prefs.getInt("hideDelay",2)-1,(d,w)->{prefs.edit().putInt("hideDelay",w+1).apply();hideDelay.setText("זמן הסתרת כפתורים: "+(w+1)+" שניות");d.dismiss();}).show();});
         box.addView(a);box.addView(hideDelay);box.addView(g);box.addView(sp);box.addView(l);box.addView(ap);box.addView(tr);box.addView(sl);box.addView(sb);box.addView(colors);box.addView(guideBtn);box.addView(aboutBtn);
         new AlertDialog.Builder(this).setTitle("⚙ הגדרות טיק דוס").setView(box)
