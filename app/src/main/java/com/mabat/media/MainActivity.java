@@ -73,7 +73,7 @@ public class MainActivity extends Activity implements TextureView.SurfaceTexture
         findViewById(R.id.back).setOnClickListener(v->closeViewer());
         share.setOnClickListener(v->share());
         TextView favView=findViewById(R.id.favorite); if(favView!=null) favView.setOnClickListener(v->toggleFavorite());
-        TextView lockView=findViewById(R.id.lock); if(lockView!=null) lockView.setOnClickListener(v->{screenLocked=!screenLocked;lockView.setText(screenLocked?"🔓":"🔒");toast(screenLocked?"המסך ננעל":"המסך שוחרר");});
+        TextView lockView=findViewById(R.id.lock); if(lockView!=null){ screenLocked=prefs.getBoolean("screenLock",false); lockView.setVisibility(prefs.getBoolean("showScreenLock",true)?View.VISIBLE:View.GONE); lockView.setOnClickListener(v->{screenLocked=!screenLocked;lockView.setText(screenLocked?"🔓":"🔒");toast(screenLocked?"המסך ננעל":"המסך שוחרר");}); }
         seekBar.setOnSeekBarChangeListener(new SeekBar.OnSeekBarChangeListener(){
             public void onProgressChanged(SeekBar b,int p,boolean fromUser){
                 if(fromUser && player!=null && player.getDuration()>0) player.seekTo((int)((long)p*player.getDuration()/1000L));
@@ -167,13 +167,14 @@ public class MainActivity extends Activity implements TextureView.SurfaceTexture
         CheckBox l=new CheckBox(this);l.setText("נעילת כפול 2 בהחלקה למטה");l.setChecked(prefs.getBoolean("speedLock",true));
         CheckBox ap=new CheckBox(this);ap.setText("הפעל סרטון אוטומטית במעבר לפריט");ap.setChecked(prefs.getBoolean("autoPlay",true));
         CheckBox tr=new CheckBox(this);tr.setText("אנימציית מעבר בין סרטונים");tr.setChecked(prefs.getBoolean("transitionAnim",true));
+        CheckBox sl=new CheckBox(this);sl.setText("הצג נעילת מסך בנגן");sl.setChecked(prefs.getBoolean("showScreenLock",true));
         Button zoom=new Button(this);zoom.setText("גודל סרטון: "+prefs.getInt("videoZoom",96)+"%");zoom.setOnClickListener(v->showZoomSetup());
         Button fav=new Button(this);fav.setText("⭐ מועדפים");fav.setAllCaps(false);fav.setOnClickListener(v->{if(favorites.isEmpty()){toast("אין מועדפים עדיין");return;}items.clear();items.addAll(favorites);pos=0;openViewer();});box.addView(fav);Button filter=new Button(this);filter.setText("🔎 חיפוש וסינון");filter.setAllCaps(false);filter.setOnClickListener(v->showFilter());box.addView(filter);Button theme=new Button(this);theme.setText("🎨 ערכות עיצוב");theme.setAllCaps(false);theme.setOnClickListener(v->showThemes());box.addView(theme);Button colors=new Button(this);colors.setText("🎨 צבעי האפליקציה");colors.setOnClickListener(v->showColorSettings());
         Button guideBtn=new Button(this);guideBtn.setText("📖 מדריך והוראות");guideBtn.setAllCaps(false);guideBtn.setOnClickListener(v->showGuide());
         Button aboutBtn=new Button(this);aboutBtn.setText("ℹ️ אודות");aboutBtn.setAllCaps(false);aboutBtn.setOnClickListener(v->showAbout());
-        box.addView(a);box.addView(g);box.addView(sp);box.addView(l);box.addView(ap);box.addView(tr);box.addView(zoom);box.addView(colors);box.addView(guideBtn);box.addView(aboutBtn);
+        box.addView(a);box.addView(g);box.addView(sp);box.addView(l);box.addView(ap);box.addView(tr);box.addView(sl);box.addView(zoom);box.addView(colors);box.addView(guideBtn);box.addView(aboutBtn);
         new AlertDialog.Builder(this).setTitle("⚙ הגדרות טיק דוס").setView(box)
-            .setPositiveButton("שמור",(d,w)->prefs.edit().putBoolean("autoHide",a.isChecked()).putBoolean("gestureDoubleTap",g.isChecked()).putBoolean("longSpeed",sp.isChecked()).putBoolean("speedLock",l.isChecked()).putBoolean("autoPlay",ap.isChecked()).putBoolean("transitionAnim",tr.isChecked()).apply())
+            .setPositiveButton("שמור",(d,w)->prefs.edit().putBoolean("autoHide",a.isChecked()).putBoolean("gestureDoubleTap",g.isChecked()).putBoolean("longSpeed",sp.isChecked()).putBoolean("speedLock",l.isChecked()).putBoolean("autoPlay",ap.isChecked()).putBoolean("transitionAnim",tr.isChecked()).putBoolean("showScreenLock",sl.isChecked()).apply());
             .setNegativeButton("ביטול",null).show();
     }
 
@@ -285,6 +286,8 @@ public class MainActivity extends Activity implements TextureView.SurfaceTexture
         handler.postDelayed(()->speed.setVisibility(View.GONE),500);
     }
 
+    void resetPlaybackSpeed(){ if(player!=null) try{player.setPlaybackParams(new PlaybackParams().setSpeed(1f));}catch(Exception ignored){} speed.setVisibility(View.GONE); speedLocked=false; }
+
     void setSpeed(float s) {
         if (player==null) return;
         try { player.setPlaybackParams(new PlaybackParams().setSpeed(s)); } catch(Exception ignored){}
@@ -383,6 +386,7 @@ public class MainActivity extends Activity implements TextureView.SurfaceTexture
     void prepareVideo(Uri u,SurfaceTexture st){
         try{
             player=new MediaPlayer();
+            player.setPlaybackParams(new PlaybackParams().setSpeed(1f));
             player.setDataSource(this,u);
             Surface surface=new android.view.Surface(st);
             player.setSurface(surface);
@@ -423,7 +427,7 @@ public class MainActivity extends Activity implements TextureView.SurfaceTexture
         handler.post(progressUpdater);
     }
 
-    void releasePlayer(){ speedLocked=false;setControlsVisible(true);if(progressUpdater!=null)handler.removeCallbacks(progressUpdater);progressUpdater=null;if(player!=null){try{player.stop();}catch(Exception ignored){}player.release();player=null;}if(seekBar!=null)seekBar.setProgress(0);if(timeText!=null)timeText.setText("00:00 / 00:00");}
+    void releasePlayer(){ speedLocked=false;setControlsVisible(true);if(progressUpdater!=null)handler.removeCallbacks(progressUpdater);progressUpdater=null;if(player!=null){try{player.setPlaybackParams(new PlaybackParams().setSpeed(1f));}catch(Exception ignored){}try{player.stop();}catch(Exception ignored){}player.release();player=null;}if(seekBar!=null)seekBar.setProgress(0);if(timeText!=null)timeText.setText("00:00 / 00:00");}
 
     void next(){speedLocked=false;if(!items.isEmpty()){pos=(pos+1)%items.size();render();}}
     void prev(){speedLocked=false;if(!items.isEmpty()){pos=(pos-1+items.size())%items.size();render();}}
