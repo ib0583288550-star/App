@@ -454,26 +454,47 @@ public class MainActivity extends Activity implements TextureView.SurfaceTexture
     void updateFavoriteIcon(){
         if(favorite==null)return;
         boolean on=!items.isEmpty() && favorites.contains(items.get(pos));
-        favorite.setText(on?"★":"☆");
+        favorite.setText("★");
         favorite.setTextColor(on?0xFFFFD600:Color.WHITE);
         favorite.setTextSize(28);
     }
     void animateFavoriteToCorner(){
-        if(favorite==null)return;
+        if(favorite==null || viewer.getWidth()<=0 || viewer.getHeight()<=0)return;
         TextView flying=new TextView(this);
         flying.setText("★");
         flying.setTextColor(0xFFFFD600);
         flying.setTextSize(46);
         flying.setGravity(Gravity.CENTER);
-        FrameLayout.LayoutParams lp=new FrameLayout.LayoutParams(70,70,Gravity.CENTER);
+        int size=70;
+        FrameLayout.LayoutParams lp=new FrameLayout.LayoutParams(size,size,Gravity.TOP|Gravity.LEFT);
         viewer.addView(flying,lp);
-        float[] start={viewer.getWidth()/2f-35,viewer.getHeight()/2f-35};
-        float[] end={viewer.getWidth()-74f,76f};
-        flying.setTranslationX(start[0]); flying.setTranslationY(start[1]);
-        flying.setScaleX(1.0f); flying.setScaleY(1.0f); flying.setAlpha(1f);
-        flying.animate().translationX(end[0]).translationY(end[1]).scaleX(.45f).scaleY(.45f).alpha(.15f)
-            .setDuration(500).setInterpolator(new android.view.animation.AccelerateDecelerateInterpolator())
-            .withEndAction(()->{viewer.removeView(flying);updateFavoriteIcon();}).start();
+
+        int[] viewerLoc=new int[2];
+        int[] favoriteLoc=new int[2];
+        viewer.getLocationOnScreen(viewerLoc);
+        favorite.getLocationOnScreen(favoriteLoc);
+
+        float startLeft=viewer.getWidth()/2f-size/2f;
+        float startTop=viewer.getHeight()/2f-size/2f;
+        float endLeft=favoriteLoc[0]-viewerLoc[0]+favorite.getWidth()/2f-size/2f;
+        float endTop=favoriteLoc[1]-viewerLoc[1]+favorite.getHeight()/2f-size/2f;
+
+        flying.setX(startLeft);
+        flying.setY(startTop);
+        flying.setScaleX(1f);
+        flying.setScaleY(1f);
+        flying.setAlpha(1f);
+
+        flying.animate()
+            .x(endLeft).y(endTop)
+            .scaleX(.45f).scaleY(.45f)
+            .alpha(.15f)
+            .setDuration(500)
+            .setInterpolator(new android.view.animation.AccelerateDecelerateInterpolator())
+            .withEndAction(()->{
+                viewer.removeView(flying);
+                updateFavoriteIcon();
+            }).start();
     }
     void toggleFavorite(){
         if(items.isEmpty())return;
