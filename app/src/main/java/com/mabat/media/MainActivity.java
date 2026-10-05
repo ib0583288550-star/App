@@ -31,7 +31,9 @@ public class MainActivity extends Activity implements TextureView.SurfaceTexture
     float downX, downY;
     long downTime;
     boolean moved = false, longPressing = false, lockGestureHandled = false, hiddenSeekDragging = false;
+    boolean wasPlayingBeforeGesture=false;
     long lastTapTime=0;
+    Runnable singleTapRunnable;
     float lastTapX=0,lastTapY=0;
     Handler handler = new Handler(Looper.getMainLooper());
     MediaPlayer player;
@@ -102,26 +104,29 @@ public class MainActivity extends Activity implements TextureView.SurfaceTexture
             if(screenLocked)return true;
             downX=e.getX(); downY=e.getY(); downTime=System.currentTimeMillis();
             moved=false; longPressing=false; lockGestureHandled=false;
+            wasPlayingBeforeGesture=player!=null && player.isPlaying();
 
             float w=Math.max(1,viewer.getWidth());
             lockZoneCandidate=e.getX()<=w*0.30f || e.getX()>=w*0.70f;
-            hiddenSeekDragging=(seekBar.getVisibility()!=View.VISIBLE&&player!=null&&player.getDuration()>0&&e.getY()>=viewer.getHeight()*0.82f);
+            hiddenSeekDragging=(seekBar.getVisibility()!=View.VISIBLE && player!=null &&
+                player.getDuration()>0 && e.getY()>=viewer.getHeight()*0.82f);
 
-            // Single tap pauses and shows controls. The hidden seek area is the only
-            // exception: touching the bottom seek zone is reserved for revealing/dragging it.
-            if(!hiddenSeekDragging && player!=null && player.isPlaying()){
-                try{player.pause();}catch(Exception ignored){}
-                showPauseIndicator();
+            // Bottom zone is reserved exclusively for the hidden seek bar.
+            if(hiddenSeekDragging){
+                if(singleTapRunnable!=null){handler.removeCallbacks(singleTapRunnable);singleTapRunnable=null;}
+                seekBar.setVisibility(View.VISIBLE);
+                setControlsVisible(true);
+                return true;
             }
 
-            // Long-press x2 exists ONLY on the left/right sides.
+            // x2 long-press is ONLY on the left/right 30% zones.
             if(isVideo() && prefs.getBoolean("longSpeed",true) && lockZoneCandidate){
                 longPressRunnable=()->{
                     if(!moved && isVideo()){
                         longPressing=true;
                         if(!speedLocked){
                             setSpeed(2f);
-                            try{player.start(); hidePauseIndicator();}catch(Exception ignored){}
+                            try{if(player!=null)player.start();hidePauseIndicator();}catch(Exception ignored){}
                         }
                     }
                 };
@@ -131,30 +136,32 @@ public class MainActivity extends Activity implements TextureView.SurfaceTexture
         }
 
         if(e.getAction()==MotionEvent.ACTION_MOVE){
-            if(hiddenSeekDragging&&player!=null&&player.getDuration()>0&&
-               Math.abs(e.getX()-downX)>10&&Math.abs(e.getX()-downX)>=Math.abs(e.getY()-downY)){
+            if(hiddenSeekDragging && player!=null && player.getDuration()>0 &&
+               Math.abs(e.getX()-downX)>10 &&
+               Math.abs(e.getX()-downX)>=Math.abs(e.getY()-downY)){
                 if(longPressRunnable!=null){handler.removeCallbacks(longPressRunnable);longPressRunnable=null;}
                 longPressing=false; moved=true;
                 int w2=Math.max(1,viewer.getWidth());
                 int p=(int)(Math.max(0,Math.min(w2,e.getX()))*1000f/w2);
-                player.seekTo((int)((long)p*player.getDuration()/1000L)); updateTime();
+                player.seekTo((int)((long)p*player.getDuration()/1000L));
+                updateTime();
                 return true;
             }
 
             float dx=Math.abs(e.getX()-downX),dy=Math.abs(e.getY()-downY);
             float downward=e.getY()-downY;
 
-            // After holding on a side, dragging downward toggles the x2 lock.
+            // Side x2 lock: hold on a side, then drag downward.
             if(longPressing && lockZoneCandidate && prefs.getBoolean("speedLock",true) &&
                downward>60 && !lockGestureHandled){
                 lockGestureHandled=true;
                 speedLocked=!speedLocked;
                 setSpeed(speedLocked?2f:1f);
                 if(speedLocked){
-                    try{player.start(); hidePauseIndicator();}catch(Exception ignored){}
+                    try{if(player!=null)player.start();hidePauseIndicator();}catch(Exception ignored){}
                     toast("כפול 2 ננעל");
                 }else{
-                    try{player.pause();}catch(Exception ignored){}
+                    try{if(player!=null)player.pause();}catch(Exception ignored){}
                     stopSpeedIndicator();
                     showPauseIndicator();
                     toast("נעילת כפול 2 בוטלה");
@@ -163,7 +170,7 @@ public class MainActivity extends Activity implements TextureView.SurfaceTexture
                 return true;
             }
 
-            // Normal vertical swipes remain navigation and cancel x2.
+            // Any normal swipe cancels tap/long-press handling.
             if(dx>35 || dy>35){
                 moved=true;
                 if(longPressRunnable!=null){handler.removeCallbacks(longPressRunnable);longPressRunnable=null;}
@@ -182,16 +189,17 @@ public class MainActivity extends Activity implements TextureView.SurfaceTexture
             if(hiddenSeekDragging){
                 hiddenSeekDragging=false;
                 if(!prefs.getBoolean("showSeekBar",true))seekBar.setVisibility(View.GONE);
+                scheduleControlsHide();
                 return true;
             }
 
             if(longPressRunnable!=null){handler.removeCallbacks(longPressRunnable);longPressRunnable=null;}
 
-            // A side long-press without dragging is temporary x2 while held.
+            // A completed side long-press is temporary x2 while held.
             if(longPressing){
                 if(!speedLocked){
                     setSpeed(1f);
-                    if(player!=null && !player.isPlaying()){
+                    if(wasPlayingBeforeGesture && player!=null && !player.isPlaying()){
                         try{player.start();}catch(Exception ignored){}
                     }
                 }
@@ -208,25 +216,43 @@ public class MainActivity extends Activity implements TextureView.SurfaceTexture
                 return true;
             }
 
-            // Middle-screen double tap = favorite. A single tap only shows controls;
-            // it never pauses or resumes the video.
             float w=Math.max(1,viewer.getWidth());
             boolean middle=downX>w*0.30f && downX<w*0.70f;
             long now=System.currentTimeMillis();
+
+            // Double tap in the middle ONLY toggles the favorite.
+            // It cancels the pending single-tap action so the double tap
+            // does not also pause/resume the video.
             if(middle && now-lastTapTime<=320 &&
                Math.abs(downX-lastTapX)<80 && Math.abs(downY-lastTapY)<80){
+                if(singleTapRunnable!=null){handler.removeCallbacks(singleTapRunnable);singleTapRunnable=null;}
                 lastTapTime=0;
                 toggleFavorite();
+                setControlsVisible(true);
+                scheduleControlsHide();
                 return true;
             }
+
             if(middle){
                 lastTapTime=now; lastTapX=downX; lastTapY=downY;
             }else{
                 lastTapTime=0;
             }
 
-            setControlsVisible(true);
-            scheduleControlsHide();
+            // Confirm a real single tap after the double-tap window.
+            // This prevents the first tap of a double tap from pausing.
+            if(singleTapRunnable!=null){handler.removeCallbacks(singleTapRunnable);singleTapRunnable=null;}
+            final boolean shouldPause=player!=null && player.isPlaying();
+            singleTapRunnable=()->{
+                singleTapRunnable=null;
+                if(shouldPause && player!=null){
+                    try{player.pause();}catch(Exception ignored){}
+                    showPauseIndicator();
+                }
+                setControlsVisible(true);
+                scheduleControlsHide();
+            };
+            handler.postDelayed(singleTapRunnable,330);
             return true;
         }
         return true;
