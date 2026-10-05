@@ -104,14 +104,10 @@ public class MainActivity extends Activity implements TextureView.SurfaceTexture
                 player.seekTo((int)((long)p*player.getDuration()/1000L));updateTime();return true;
             }
             float dx=Math.abs(e.getX()-downX),dy=Math.abs(e.getY()-downY);
-            if(dx>35||dy>35){
-                moved=true;
-                // Any real swipe cancels the long-press timer. This prevents a slow
-                // swipe to the next/previous video from accidentally becoming x2.
-                if(longPressRunnable!=null){handler.removeCallbacks(longPressRunnable);longPressRunnable=null;}
-                if(!lockGestureHandled) longPressing=false;
-            }
-            // Speed-lock is ONLY a deliberate gesture in the bottom zone:
+            // Speed-lock is checked first. A deliberate lock gesture is allowed to pass the
+            // normal swipe threshold only after the long-press has actually fired.
+            if(longPressing&&lockZoneCandidate&&prefs.getBoolean("speedLock",true)&&
+               e.getY()-downY>90&&!lockGestureHandled){
             // hold there first, then drag further downward. Normal swipes never lock x2.
             if(longPressing&&lockZoneCandidate&&prefs.getBoolean("speedLock",true)&&
                e.getY()-downY>90&&!lockGestureHandled){
@@ -120,6 +116,12 @@ public class MainActivity extends Activity implements TextureView.SurfaceTexture
                 setSpeed(speedLocked?2f:1f);
                 if(speedLocked) showSpeedIndicator(); else {stopSpeedIndicator();toast("נעילת כפול 2 בוטלה");}
                 longPressing=false;moved=true;
+            } else if(dx>35||dy>35){
+                // Normal swipes cancel the pending long press, so changing videos
+                // cannot accidentally trigger x2.
+                moved=true;
+                if(longPressRunnable!=null){handler.removeCallbacks(longPressRunnable);longPressRunnable=null;}
+                longPressing=false;
             }
             return true;
         }
