@@ -450,7 +450,7 @@ public class MainActivity extends Activity implements TextureView.SurfaceTexture
         );
         scroll.addView(guide);
         AlertDialog dlg=new AlertDialog.Builder(this)
-            .setTitle("📖 מדריך טיק דוס • גרסה 1.6")
+            .setTitle("📖 מדריך טיק דוס • גרסה v0.1")
             .setView(scroll)
             .setPositiveButton("סגור",null).create();
         dlg.setOnShowListener(v->{dlg.getButton(AlertDialog.BUTTON_POSITIVE).setTextColor(0xFFB9A7FF);});
@@ -482,7 +482,7 @@ public class MainActivity extends Activity implements TextureView.SurfaceTexture
         company.setTextColor(0xFFB9A7FF);
         box.addView(company);
 
-        TextView version=makeInfoText("גרסה 1.6");
+        TextView version=makeInfoText("גרסה v0.1");
         version.setGravity(Gravity.CENTER);
         version.setTextSize(13);
         version.setTextColor(0xFF9696A8);
