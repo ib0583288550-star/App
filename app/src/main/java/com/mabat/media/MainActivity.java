@@ -30,7 +30,9 @@ public class MainActivity extends Activity implements TextureView.SurfaceTexture
     int pos = 0;
     float downX, downY;
     long downTime;
-    boolean moved = false, longPressing = false, doubleTapPending = false, lockGestureHandled = false, hiddenSeekDragging = false;
+    boolean moved = false, longPressing = false, lockGestureHandled = false, hiddenSeekDragging = false;
+    long lastTapTime=0;
+    float lastTapX=0,lastTapY=0;
     Handler handler = new Handler(Looper.getMainLooper());
     MediaPlayer player;
     SharedPreferences likes;
@@ -97,28 +99,28 @@ public class MainActivity extends Activity implements TextureView.SurfaceTexture
 
         if(e.getAction()==MotionEvent.ACTION_DOWN){
             if(screenLocked)return true;
-            downX=e.getX();
-            downY=e.getY();
-            downTime=System.currentTimeMillis();
-            moved=false;
-            longPressing=false;
-            lockGestureHandled=false;
-            // Lock gesture is ONLY from the left or right side of the screen.
+            downX=e.getX(); downY=e.getY(); downTime=System.currentTimeMillis();
+            moved=false; longPressing=false; lockGestureHandled=false;
+
             float w=Math.max(1,viewer.getWidth());
             lockZoneCandidate=e.getX()<=w*0.30f || e.getX()>=w*0.70f;
             hiddenSeekDragging=(seekBar.getVisibility()!=View.VISIBLE&&player!=null&&player.getDuration()>0);
 
-            // Any touch immediately pauses the current video.
+            // Every normal touch pauses immediately.
             if(player!=null && player.isPlaying()){
                 try{player.pause();}catch(Exception ignored){}
                 showPauseIndicator();
             }
 
-            if(isVideo()&&prefs.getBoolean("longSpeed",true)){
+            // Long-press x2 exists ONLY on the left/right sides.
+            if(isVideo() && prefs.getBoolean("longSpeed",true) && lockZoneCandidate){
                 longPressRunnable=()->{
-                    if(!moved&&isVideo()){
+                    if(!moved && isVideo()){
                         longPressing=true;
-                        if(!speedLocked)setSpeed(2f);
+                        if(!speedLocked){
+                            setSpeed(2f);
+                            try{player.start(); hidePauseIndicator();}catch(Exception ignored){}
+                        }
                     }
                 };
                 handler.postDelayed(longPressRunnable,600);
@@ -128,39 +130,38 @@ public class MainActivity extends Activity implements TextureView.SurfaceTexture
 
         if(e.getAction()==MotionEvent.ACTION_MOVE){
             if(hiddenSeekDragging&&player!=null&&player.getDuration()>0&&
-               Math.abs(e.getX()-downX)>10&&
-               Math.abs(e.getX()-downX)>=Math.abs(e.getY()-downY)){
+               Math.abs(e.getX()-downX)>10&&Math.abs(e.getX()-downX)>=Math.abs(e.getY()-downY)){
                 if(longPressRunnable!=null){handler.removeCallbacks(longPressRunnable);longPressRunnable=null;}
-                longPressing=false;
-                moved=true;
+                longPressing=false; moved=true;
                 int w2=Math.max(1,viewer.getWidth());
                 int p=(int)(Math.max(0,Math.min(w2,e.getX()))*1000f/w2);
-                player.seekTo((int)((long)p*player.getDuration()/1000L));
-                updateTime();
+                player.seekTo((int)((long)p*player.getDuration()/1000L)); updateTime();
                 return true;
             }
 
             float dx=Math.abs(e.getX()-downX),dy=Math.abs(e.getY()-downY);
             float downward=e.getY()-downY;
 
-            // After a long press, only a downward drag from the left/right side locks x2.
-            if(longPressing && lockZoneCandidate &&
-               prefs.getBoolean("speedLock",true) &&
+            // After holding on a side, dragging downward toggles the x2 lock.
+            if(longPressing && lockZoneCandidate && prefs.getBoolean("speedLock",true) &&
                downward>60 && !lockGestureHandled){
                 lockGestureHandled=true;
                 speedLocked=!speedLocked;
                 setSpeed(speedLocked?2f:1f);
-                if(!speedLocked){
+                if(speedLocked){
+                    try{player.start(); hidePauseIndicator();}catch(Exception ignored){}
+                    toast("כפול 2 ננעל");
+                }else{
+                    try{player.pause();}catch(Exception ignored){}
                     stopSpeedIndicator();
+                    showPauseIndicator();
                     toast("נעילת כפול 2 בוטלה");
                 }
-                longPressing=false;
-                moved=true;
+                longPressing=false; moved=true;
                 return true;
             }
 
-            // Any ordinary swipe cancels the long-press gesture. This keeps video
-            // navigation completely normal and prevents accidental x2.
+            // Normal vertical swipes remain navigation and cancel x2.
             if(dx>35 || dy>35){
                 moved=true;
                 if(longPressRunnable!=null){handler.removeCallbacks(longPressRunnable);longPressRunnable=null;}
@@ -184,15 +185,18 @@ public class MainActivity extends Activity implements TextureView.SurfaceTexture
 
             if(longPressRunnable!=null){handler.removeCallbacks(longPressRunnable);longPressRunnable=null;}
 
-            // Holding without the downward lock gesture gives temporary x2.
+            // A side long-press without dragging is temporary x2 while held.
             if(longPressing){
-                if(!speedLocked)setSpeed(1f);
+                if(!speedLocked){
+                    setSpeed(1f);
+                    try{player.pause();}catch(Exception ignored){}
+                    showPauseIndicator();
+                }
                 longPressing=false;
                 scheduleControlsHide();
                 return true;
             }
 
-            // Normal vertical swipe = next/previous. The new item can autoplay normally.
             if(moved){
                 float d=e.getY()-downY;
                 if(Math.abs(d)>90){
@@ -201,7 +205,23 @@ public class MainActivity extends Activity implements TextureView.SurfaceTexture
                 return true;
             }
 
-            // No double-tap logic: a normal touch is simply a pause.
+            // Middle-screen double tap = favorite. Single middle tap only opens controls
+            // and leaves the video paused; it does not trigger any other action.
+            float w=Math.max(1,viewer.getWidth());
+            boolean middle=downX>w*0.30f && downX<w*0.70f;
+            long now=System.currentTimeMillis();
+            if(middle && now-lastTapTime<=320 &&
+               Math.abs(downX-lastTapX)<80 && Math.abs(downY-lastTapY)<80){
+                lastTapTime=0;
+                toggleFavorite();
+                return true;
+            }
+            if(middle){
+                lastTapTime=now; lastTapX=downX; lastTapY=downY;
+            }else{
+                lastTapTime=0;
+            }
+
             setControlsVisible(true);
             scheduleControlsHide();
             return true;
@@ -564,8 +584,8 @@ public class MainActivity extends Activity implements TextureView.SurfaceTexture
         TextView guide=makeInfoText(
             "📖 מדריך מלא לטיק דוס\n\n"+
             "🏠 מסך הבית\n• הלוגו למעלה הוא הלוגו של האפליקציה.\n• ״הוסף תיקיות״ – בוחרים תיקייה מהמכשיר ואפשר להוסיף כמה.\n• ״פתח את הפיד״ – סורק את התיקיות ומציג תמונות וסרטונים.\n\n"+
-            "🎬 צפייה בפיד\n• החלקה למעלה – פריט הבא.\n• החלקה למטה – פריט קודם.\n• כל נגיעה במסך עוצרת את הסרטון.\n• אין יותר דאבל־טאפ.\n• לחיצה ארוכה בכל מקום – כפול 2 זמני.\n• לחיצה ארוכה בצד ימין או שמאל והחלקה למטה – נעילת כפול 2. אותה מחווה שוב משחררת את הנעילה.\n• החלקה רגילה למעלה/למטה – מעבר רגיל בין סרטונים.\n• כפתור החזרה מציג רק את החץ; כפתור השיתוף נמצא בפינה שממול.\n• כשהפקדים מוסתרים, אפשר לגעת באזור התחתון שבו נמצא פס הזמן כדי לחשוף אותו זמנית, להחליק למיקום הרצוי, וכשעוזבים הוא נעלם שוב אם הוא מוגדר כמוסתר.\n\n"+
-            "⚙️ הגדרות\n• הסתרת כפתורים – אפשר להפעיל או לבטל הסתרה אוטומטית.\n• זמן הסתרת כפתורים – אפשר לבחור 1, 2, 3, 4 או 5 שניות. כשהכפתורים נעלמים, אזור פס הזמן עדיין ניתן להחלקה.\n• פס זמן הסרטון – אפשר להציג או להסתיר את הסליידר. כשהוא מוסתר, נוגעים או מחליקים בדיוק באזור התחתון שבו הוא אמור להיות: הסליידר מתגלה, אפשר לגרור אותו לזמן הרצוי, וברגע שמשחררים הוא נעלם שוב.\n• לחיצה ארוכה – מפעילה או מבטלת כפול 2. היציאה מהאפליקציה והחזרה אליה מאפסות את מהירות ההפעלה ל־1×.\n• נעילת כפול 2 – לחיצה ארוכה והחלקה למטה נועלת; אותה מחווה שוב מבטלת את הנעילה.\n• נעילת מסך – אפשר לבחור אם אייקון הנעילה יוצג בנגן. אפשר גם לנעול ולשחרר את המסך דרך האייקון.\n• הפעלה אוטומטית – קובעת אם סרטון חדש יתחיל מיד.\n• אנימציית מעבר – מעבר חלק בין פריטים.\n"+
+            "🎬 צפייה בפיד\n• החלקה למעלה – פריט הבא.\n• החלקה למטה – פריט קודם.\n• כל נגיעה במסך עוצרת את הסרטון.\n• לחיצה אחת באמצע המסך – עוצרת את הסרטון ומציגה את הכפתורים.\n• לחיצה כפולה באמצע המסך – מוסיפה או מסירה את הפריט מהמועדפים.\n• לחיצה ארוכה בצד ימין או שמאל – כפול 2 בזמן ההחזקה.\n• לחיצה ארוכה בצד ימין או שמאל והחלקה למטה – נעילת כפול 2. אותה מחווה שוב משחררת את הנעילה.\n• החלקה רגילה למעלה/למטה – מעבר רגיל בין סרטונים.\n• כפתור החזרה מציג רק את החץ; כפתור השיתוף נמצא בפינה שממול.\n• כשהפקדים מוסתרים, אפשר לגעת באזור התחתון שבו נמצא פס הזמן כדי לחשוף אותו זמנית, להחליק למיקום הרצוי, וכשעוזבים הוא נעלם שוב אם הוא מוגדר כמוסתר.\n\n"+
+            "⚙️ הגדרות\n• הסתרת כפתורים – אפשר להפעיל או לבטל הסתרה אוטומטית.\n• זמן הסתרת כפתורים – אפשר לבחור 1, 2, 3, 4 או 5 שניות. כשהכפתורים נעלמים, אזור פס הזמן עדיין ניתן להחלקה.\n• פס זמן הסרטון – אפשר להציג או להסתיר את הסליידר. כשהוא מוסתר, נוגעים או מחליקים בדיוק באזור התחתון שבו הוא אמור להיות: הסליידר מתגלה, אפשר לגרור אותו לזמן הרצוי, וברגע שמשחררים הוא נעלם שוב.\n• לחיצה ארוכה בצד ימין או שמאל – מפעילה כפול 2 בזמן ההחזקה. גרירה למטה נועלת את כפול 2, ואותה מחווה שוב משחררת את הנעילה.\n• לחיצה אחת באמצע עוצרת ומציגה כפתורים; לחיצה כפולה באמצע מנהלת מועדפים.\n• נעילת כפול 2 – לחיצה ארוכה והחלקה למטה נועלת; אותה מחווה שוב מבטלת את הנעילה.\n• נעילת מסך – אפשר לבחור אם אייקון הנעילה יוצג בנגן. אפשר גם לנעול ולשחרר את המסך דרך האייקון.\n• הפעלה אוטומטית – קובעת אם סרטון חדש יתחיל מיד.\n• אנימציית מעבר – מעבר חלק בין פריטים.\n"+
             "🎨 צבעי האפליקציה\n• צבעים מהעיגולים משתנים מיד.\n• אפשר צבע מותאם אישית עם גוון ואטימות.\n• בצבעים בהירים, כולל לבן, הכיתוב הופך לשחור.\n• ״שמור וסגור״ שומר; ״ביטול״ מחזיר את הצבע הקודם.\n\n"+
             "⏸️ יציאה מהאפליקציה\n• ביציאה הסרטון נעצר.\n• בחזרה לאפליקציה הוא לא ממשיך אוטומטית.\n\n"+
             "📤 שיתוף\n• כפתור השיתוף משתף את הפריט שמוצג כרגע.\n\n"+
