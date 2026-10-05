@@ -64,6 +64,7 @@ public class MainActivity extends Activity implements TextureView.SurfaceTexture
         likes=getSharedPreferences("likes",0);
         prefs=getSharedPreferences("settings",0);
         movie.setSurfaceTextureListener(this);
+        applyScreenAdaptation(prefs.getString("screenAdaptation","auto"));
 
         loadRoots();
         loadFavorites();
@@ -102,6 +103,20 @@ public class MainActivity extends Activity implements TextureView.SurfaceTexture
                 setControlsVisible(true); scheduleControlsHide();
                 if(prefs.getBoolean("gestureDoubleTap",true)){float third=viewer.getWidth()/3f,x=e.getX();if(x<third)seekBy(-10000);else if(x>third*2f)seekBy(10000);else togglePlayback();}else togglePlayback();}
                 else{doubleTapPending=true;handler.postDelayed(()->{if(doubleTapPending){doubleTapPending=false;togglePlayback();}},240);}}return true;}return true;
+    }
+
+    int dp(float v){ return (int)(v*getResources().getDisplayMetrics().density+0.5f); }
+    String screenModeLabel(String m){ return "small".equals(m)?"מסך קטן":"normal".equals(m)?"מסך רגיל":"large".equals(m)?"מסך גדול":"אוטומטי"; }
+    void applyScreenAdaptation(String mode){
+        float d=getResources().getDisplayMetrics().density, widthDp=getResources().getDisplayMetrics().widthPixels/d;
+        float scale="small".equals(mode)?0.82f:"normal".equals(mode)?1f:"large".equals(mode)?1.12f:(widthDp<360?0.82f:widthDp<400?0.92f:widthDp>600?1.08f:1f);
+        ImageView logo=findViewById(R.id.appLogo); if(logo!=null){LinearLayout.LayoutParams p=new LinearLayout.LayoutParams(dp(96*scale),dp(96*scale));p.bottomMargin=dp(8*scale);logo.setLayoutParams(p);}
+        TextView title=findViewById(R.id.homeTitle),sub=findViewById(R.id.homeSubtitle),stat=findViewById(R.id.status),foot=findViewById(R.id.homeFooter);
+        if(title!=null)title.setTextSize(30*scale); if(sub!=null)sub.setTextSize(16*scale); if(stat!=null)stat.setTextSize(15*scale); if(foot!=null)foot.setTextSize(12*scale);
+        for(int id:new int[]{R.id.add,R.id.settings,R.id.start}){View v=findViewById(id);if(v!=null){LinearLayout.LayoutParams p=(LinearLayout.LayoutParams)v.getLayoutParams();p.height=dp((id==R.id.settings?50:56)*scale);p.topMargin=dp(10*scale);v.setLayoutParams(p);if(v instanceof TextView)((TextView)v).setTextSize(16*scale);}}
+        if(home!=null){LinearLayout.LayoutParams p=(LinearLayout.LayoutParams)home.getLayoutParams();p.setMargins(dp(10*scale),dp(24*scale),dp(10*scale),dp(14*scale));home.setLayoutParams(p);home.setPadding(dp(24*scale),dp(34*scale),dp(24*scale),dp(20*scale));}
+        TextView back=findViewById(R.id.back);if(back!=null){FrameLayout.LayoutParams p=(FrameLayout.LayoutParams)back.getLayoutParams();p.width=p.height=dp(50*scale);p.leftMargin=dp(12*scale);p.topMargin=dp(12*scale);back.setLayoutParams(p);back.setTextSize(14*scale);}
+        if(count!=null)count.setTextSize(14*scale);
     }
 
     void setControlsVisible(boolean visible){int v=visible?View.VISIBLE:View.GONE;findViewById(R.id.actionColumn).setVisibility(v);findViewById(R.id.bottomInfo).setVisibility(v);count.setVisibility(v);timeText.setVisibility(v);findViewById(R.id.back).setVisibility(v);seekBar.setVisibility(prefs.getBoolean("showSeekBar",true)?v:View.GONE);}
