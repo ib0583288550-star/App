@@ -232,14 +232,14 @@ public class MainActivity extends Activity implements TextureView.SurfaceTexture
         TextView alphaText=new TextView(this);alphaText.setText("אטימות: 100%");alphaText.setGravity(Gravity.CENTER);box.addView(alphaText);
         Runnable refresh=()->{
             float[] hsv={hue.getProgress(),0.72f,1f};int c=Color.HSVToColor(alpha.getProgress(),hsv);
-            preview.setBackgroundColor(c);preview.setTextColor(contrastTextColor(c));
+            preview.setBackgroundColor(c);preview.setTextColor(contrastTextColor(c));applyAccent(c);
             alphaText.setText("אטימות: "+Math.round(alpha.getProgress()*100f/255f)+"%");
         };
         hue.setOnSeekBarChangeListener(new SeekBar.OnSeekBarChangeListener(){public void onProgressChanged(SeekBar b,int p,boolean f){refresh.run();}public void onStartTrackingTouch(SeekBar b){}public void onStopTrackingTouch(SeekBar b){}});
         alpha.setOnSeekBarChangeListener(new SeekBar.OnSeekBarChangeListener(){public void onProgressChanged(SeekBar b,int p,boolean f){refresh.run();}public void onStartTrackingTouch(SeekBar b){}public void onStopTrackingTouch(SeekBar b){}});
         refresh.run();
-        AlertDialog dlg=new AlertDialog.Builder(this).setTitle("צבע מותאם אישית").setView(box).setNegativeButton("ביטול",(d,w)->applyAccent(original)).setPositiveButton("שמור",null).create();
-        dlg.setOnShowListener(x->dlg.getButton(AlertDialog.BUTTON_POSITIVE).setOnClickListener(v->{float[] hsv={hue.getProgress(),0.72f,1f};applyAccent(Color.HSVToColor(alpha.getProgress(),hsv));dlg.dismiss();}));
+        AlertDialog dlg=new AlertDialog.Builder(this).setTitle("צבע מותאם אישית").setView(box).setNegativeButton("ביטול",(d,w)->applyAccent(original)).setPositiveButton("סגור",null).create();
+        dlg.setOnShowListener(x->dlg.getButton(AlertDialog.BUTTON_POSITIVE).setOnClickListener(v->dlg.dismiss()));
         dlg.show();
     }
 
