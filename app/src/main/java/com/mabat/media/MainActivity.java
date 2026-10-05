@@ -94,7 +94,7 @@ public class MainActivity extends Activity implements TextureView.SurfaceTexture
 
     boolean handleTouch(MotionEvent e) {
         if(screenLocked && e.getAction()!=MotionEvent.ACTION_DOWN) return true;
-        if(e.getAction()==MotionEvent.ACTION_DOWN){ if(screenLocked)return true;downX=e.getX();downY=e.getY();downTime=System.currentTimeMillis();moved=false;longPressing=false;lockGestureHandled=false;lockZoneCandidate=e.getY()>=viewer.getHeight()*0.72f;hiddenSeekDragging=(seekBar.getVisibility()!=View.VISIBLE&&player!=null&&player.getDuration()>0);
+        if(e.getAction()==MotionEvent.ACTION_DOWN){ if(screenLocked)return true;downX=e.getX();downY=e.getY();downTime=System.currentTimeMillis();moved=false;longPressing=false;lockGestureHandled=false;lockZoneCandidate=e.getY()>=viewer.getHeight()*0.65f;hiddenSeekDragging=(seekBar.getVisibility()!=View.VISIBLE&&player!=null&&player.getDuration()>0);
             if(isVideo()&&prefs.getBoolean("longSpeed",true)){ longPressRunnable=()->{if(!moved&&isVideo()){longPressing=true;if(!speedLocked)setSpeed(2f);}}; handler.postDelayed(longPressRunnable,600); } return true;}
         if(e.getAction()==MotionEvent.ACTION_MOVE){
             if(hiddenSeekDragging&&player!=null&&player.getDuration()>0&&Math.abs(e.getX()-downX)>10&&Math.abs(e.getX()-downX)>=Math.abs(e.getY()-downY)){
@@ -107,7 +107,7 @@ public class MainActivity extends Activity implements TextureView.SurfaceTexture
             // Speed-lock is checked first. A deliberate lock gesture is allowed to pass the
             // normal swipe threshold only after the long-press has actually fired.
             if(longPressing&&lockZoneCandidate&&prefs.getBoolean("speedLock",true)&&
-               e.getY()-downY>90&&!lockGestureHandled){
+               e.getY()-downY>35&&!lockGestureHandled){
                 lockGestureHandled=true;
                 speedLocked=!speedLocked;
                 setSpeed(speedLocked?2f:1f);
