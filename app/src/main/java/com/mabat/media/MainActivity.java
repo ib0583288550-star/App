@@ -746,7 +746,6 @@ public class MainActivity extends Activity implements TextureView.SurfaceTexture
         resumeAfterBackground=false;
         if(player!=null){
             try{backgroundPlaybackPosition=Math.max(0,player.getCurrentPosition());}catch(Exception ignored){backgroundPlaybackPosition=0;}
-            try{resumeAfterBackground=player.isPlaying();}catch(Exception ignored){resumeAfterBackground=false;}
             try{player.pause();}catch(Exception ignored){}
             try{player.setPlaybackParams(new PlaybackParams().setSpeed(1f));}catch(Exception ignored){}
         }
@@ -765,18 +764,12 @@ public class MainActivity extends Activity implements TextureView.SurfaceTexture
     @Override protected void onResume(){
         super.onResume();
         speedLocked=false;
+        // Returning to the app must keep the video paused; the user resumes it with a tap.
+        resumeAfterBackground=false;
+        returningFromBackground=false;
         if(player!=null){
             try{player.setPlaybackParams(new PlaybackParams().setSpeed(1f));}catch(Exception ignored){}
-            if(resumeAfterBackground && movie.getVisibility()==View.VISIBLE){
-                try{
-                    if(player.getDuration()>0) player.seekTo(Math.min(backgroundPlaybackPosition,player.getDuration()-1));
-                    player.start();
-                }catch(Exception ignored){}
-            }
-            resumeAfterBackground=false;
-            returningFromBackground=false;
             startProgressUpdater();
-            if(player.isPlaying())scheduleControlsHide();
         }
         hidePauseIndicator();
     }
