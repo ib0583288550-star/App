@@ -14,3 +14,4 @@
 ## בנייה
 
 GitHub Actions מריץ `gradle assembleDebug` ומעלה את `app-debug.apk` כ-artifact בשם `mabat-debug-apk`.
+
