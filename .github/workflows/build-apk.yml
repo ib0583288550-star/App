@@ -1,7 +1,7 @@
 name: Build APK
 on:
   push:
-    branches: ["main"]
+    branches: ["v1.7-manual-adaptive"]
   workflow_dispatch:
 
 jobs:
