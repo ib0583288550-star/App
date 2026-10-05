@@ -96,8 +96,33 @@ public class MainActivity extends Activity implements TextureView.SurfaceTexture
         if(screenLocked && e.getAction()!=MotionEvent.ACTION_DOWN) return true;
         if(e.getAction()==MotionEvent.ACTION_DOWN){ if(screenLocked)return true;downX=e.getX();downY=e.getY();downTime=System.currentTimeMillis();moved=false;longPressing=false;lockGestureHandled=false;lockZoneCandidate=e.getY()>=viewer.getHeight()*0.72f;hiddenSeekDragging=(seekBar.getVisibility()!=View.VISIBLE&&player!=null&&player.getDuration()>0);
             if(isVideo()&&prefs.getBoolean("longSpeed",true)){ longPressRunnable=()->{if(!moved&&isVideo()){longPressing=true;if(!speedLocked)setSpeed(2f);}}; handler.postDelayed(longPressRunnable,600); } return true;}
-        if(e.getAction()==MotionEvent.ACTION_MOVE){if(hiddenSeekDragging&&player!=null&&player.getDuration()>0&&Math.abs(e.getX()-downX)>10&&Math.abs(e.getX()-downX)>=Math.abs(e.getY()-downY)){if(longPressRunnable!=null){handler.removeCallbacks(longPressRunnable);longPressRunnable=null;}longPressing=false;moved=true;int w=Math.max(1,viewer.getWidth());int p=(int)(Math.max(0,Math.min(w,e.getX()))*1000f/w);player.seekTo((int)((long)p*player.getDuration()/1000L));updateTime();return true;}if(Math.abs(e.getX()-downX)>35||Math.abs(e.getY()-downY)>35)moved=true;
-            if(longPressing&&lockZoneCandidate&&prefs.getBoolean("speedLock",true)&&e.getY()-downY>70&&!lockGestureHandled){lockGestureHandled=true;speedLocked=!speedLocked;if(speedLocked){setSpeed(2f);}else{setSpeed(1f);toast("נעילת כפול 2 בוטלה");}longPressing=false;moved=true;}return true;}
+        if(e.getAction()==MotionEvent.ACTION_MOVE){
+            if(hiddenSeekDragging&&player!=null&&player.getDuration()>0&&Math.abs(e.getX()-downX)>10&&Math.abs(e.getX()-downX)>=Math.abs(e.getY()-downY)){
+                if(longPressRunnable!=null){handler.removeCallbacks(longPressRunnable);longPressRunnable=null;}
+                longPressing=false;moved=true;
+                int w=Math.max(1,viewer.getWidth());int p=(int)(Math.max(0,Math.min(w,e.getX()))*1000f/w);
+                player.seekTo((int)((long)p*player.getDuration()/1000L));updateTime();return true;
+            }
+            float dx=Math.abs(e.getX()-downX),dy=Math.abs(e.getY()-downY);
+            if(dx>35||dy>35){
+                moved=true;
+                // Any real swipe cancels the long-press timer. This prevents a slow
+                // swipe to the next/previous video from accidentally becoming x2.
+                if(longPressRunnable!=null){handler.removeCallbacks(longPressRunnable);longPressRunnable=null;}
+                if(!lockGestureHandled) longPressing=false;
+            }
+            // Speed-lock is ONLY a deliberate gesture in the bottom zone:
+            // hold there first, then drag further downward. Normal swipes never lock x2.
+            if(longPressing&&lockZoneCandidate&&prefs.getBoolean("speedLock",true)&&
+               e.getY()-downY>90&&!lockGestureHandled){
+                lockGestureHandled=true;
+                speedLocked=!speedLocked;
+                setSpeed(speedLocked?2f:1f);
+                if(speedLocked) showSpeedIndicator(); else {stopSpeedIndicator();toast("נעילת כפול 2 בוטלה");}
+                longPressing=false;moved=true;
+            }
+            return true;
+        }
         if(e.getAction()==MotionEvent.ACTION_UP){if(lockGestureHandled){if(longPressRunnable!=null){handler.removeCallbacks(longPressRunnable);longPressRunnable=null;}longPressing=false;return true;}if(hiddenSeekDragging){hiddenSeekDragging=false;if(!prefs.getBoolean("showSeekBar",true))seekBar.setVisibility(View.GONE);return true;}if(longPressRunnable!=null){handler.removeCallbacks(longPressRunnable);longPressRunnable=null;}if(longPressing){if(!speedLocked)setSpeed(1f);longPressing=false;scheduleControlsHide();return true;}
             if(moved){float d=e.getY()-downY;if(Math.abs(d)>90){if(d<0)next();else prev();}return true;}
             if(System.currentTimeMillis()-downTime<300){setControlsVisible(true);scheduleControlsHide();if(doubleTapPending){doubleTapPending=false;
@@ -533,7 +558,13 @@ public class MainActivity extends Activity implements TextureView.SurfaceTexture
     }
     @Override protected void onStop(){
         super.onStop();
-        if(player!=null){try{player.pause();}catch(Exception ignored){}try{player.setPlaybackParams(new PlaybackParams().setSpeed(1f));}catch(Exception ignored){}}
+        // Leaving the app must stop playback completely; do not leave a MediaPlayer running in background.
+        if(player!=null){
+            try{player.pause();}catch(Exception ignored){}
+            try{player.setPlaybackParams(new PlaybackParams().setSpeed(1f));}catch(Exception ignored){}
+        }
+        speedLocked=false;
+        stopSpeedIndicator();
     }
     @Override protected void onResume(){
         super.onResume();speedLocked=false;returningFromBackground=true;
