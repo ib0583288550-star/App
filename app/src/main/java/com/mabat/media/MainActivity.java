@@ -47,6 +47,8 @@ public class MainActivity extends Activity implements TextureView.SurfaceTexture
     boolean lockZoneCandidate=false;
     ArrayList<Uri> favorites=new ArrayList<>();
     boolean screenLocked=false;
+    boolean resumeAfterBackground=false;
+    int backgroundPlaybackPosition=0;
     android.animation.ObjectAnimator speedAnimator;
 
     @Override public void onCreate(Bundle b) {
@@ -737,8 +739,17 @@ public class MainActivity extends Activity implements TextureView.SurfaceTexture
     @Override public boolean onSurfaceTextureDestroyed(SurfaceTexture st){releasePlayer();return true;}
     @Override public void onSurfaceTextureUpdated(SurfaceTexture st){}
     @Override protected void onPause(){
-        super.onPause();saveLastPosition();speedLocked=false;returningFromBackground=true;
-        if(player!=null){try{player.pause();}catch(Exception ignored){}try{player.setPlaybackParams(new PlaybackParams().setSpeed(1f));}catch(Exception ignored){}}
+        super.onPause();
+        saveLastPosition();
+        speedLocked=false;
+        returningFromBackground=true;
+        resumeAfterBackground=false;
+        if(player!=null){
+            try{backgroundPlaybackPosition=Math.max(0,player.getCurrentPosition());}catch(Exception ignored){backgroundPlaybackPosition=0;}
+            try{resumeAfterBackground=player.isPlaying();}catch(Exception ignored){resumeAfterBackground=false;}
+            try{player.pause();}catch(Exception ignored){}
+            try{player.setPlaybackParams(new PlaybackParams().setSpeed(1f));}catch(Exception ignored){}
+        }
         hidePauseIndicator();
     }
     @Override protected void onStop(){
@@ -752,8 +763,21 @@ public class MainActivity extends Activity implements TextureView.SurfaceTexture
         stopSpeedIndicator();
     }
     @Override protected void onResume(){
-        super.onResume();speedLocked=false;returningFromBackground=true;
-        if(player!=null){try{player.setPlaybackParams(new PlaybackParams().setSpeed(1f));}catch(Exception ignored){}try{player.pause();}catch(Exception ignored){}}
+        super.onResume();
+        speedLocked=false;
+        if(player!=null){
+            try{player.setPlaybackParams(new PlaybackParams().setSpeed(1f));}catch(Exception ignored){}
+            if(resumeAfterBackground && movie.getVisibility()==View.VISIBLE){
+                try{
+                    if(player.getDuration()>0) player.seekTo(Math.min(backgroundPlaybackPosition,player.getDuration()-1));
+                    player.start();
+                }catch(Exception ignored){}
+            }
+            resumeAfterBackground=false;
+            returningFromBackground=false;
+            startProgressUpdater();
+            if(player.isPlaying())scheduleControlsHide();
+        }
         hidePauseIndicator();
     }
 }
