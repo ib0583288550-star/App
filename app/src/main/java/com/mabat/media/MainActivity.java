@@ -496,7 +496,7 @@ public class MainActivity extends Activity implements TextureView.SurfaceTexture
             .setTitle("ℹ️ אודות טיק דוס")
             .setView(box)
             .setPositiveButton("סגור",null).create();
-        dlg.setOnShowListener(v->{TextView title=dlg.findViewById(android.R.id.alertTitle);if(title!=null){title.setTextDirection(View.TEXT_DIRECTION_RTL);title.setGravity(Gravity.RIGHT);title.setTextColor(0xFFF4F4F8);}dlg.getButton(AlertDialog.BUTTON_POSITIVE).setTextColor(0xFFB9A7FF);});
+        dlg.setOnShowListener(v->{dlg.getButton(AlertDialog.BUTTON_POSITIVE).setTextColor(0xFFB9A7FF);});
         dlg.show();
     }
 
