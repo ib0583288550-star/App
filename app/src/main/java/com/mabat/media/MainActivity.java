@@ -42,6 +42,7 @@ public class MainActivity extends Activity implements TextureView.SurfaceTexture
     boolean returningFromBackground=false;
     ArrayList<Uri> favorites=new ArrayList<>();
     boolean screenLocked=false;
+    android.animation.ObjectAnimator speedAnimator;
 
     @Override public void onCreate(Bundle b) {
         super.onCreate(b);
@@ -95,7 +96,7 @@ public class MainActivity extends Activity implements TextureView.SurfaceTexture
         if(e.getAction()==MotionEvent.ACTION_DOWN){ if(screenLocked)return true;downX=e.getX();downY=e.getY();downTime=System.currentTimeMillis();moved=false;longPressing=false;lockGestureHandled=false;hiddenSeekDragging=(seekBar.getVisibility()!=View.VISIBLE&&player!=null&&player.getDuration()>0);
             if(isVideo()&&prefs.getBoolean("longSpeed",true)){ longPressRunnable=()->{if(!moved&&isVideo()){longPressing=true;setSpeed(2f);}}; handler.postDelayed(longPressRunnable,320); } return true;}
         if(e.getAction()==MotionEvent.ACTION_MOVE){if(hiddenSeekDragging&&player!=null&&player.getDuration()>0&&Math.abs(e.getX()-downX)>10&&Math.abs(e.getX()-downX)>=Math.abs(e.getY()-downY)){if(longPressRunnable!=null){handler.removeCallbacks(longPressRunnable);longPressRunnable=null;}longPressing=false;moved=true;int w=Math.max(1,viewer.getWidth());int p=(int)(Math.max(0,Math.min(w,e.getX()))*1000f/w);player.seekTo((int)((long)p*player.getDuration()/1000L));updateTime();return true;}if(Math.abs(e.getX()-downX)>35||Math.abs(e.getY()-downY)>35)moved=true;
-            if(longPressing&&prefs.getBoolean("speedLock",true)&&e.getY()-downY>90&&!lockGestureHandled){lockGestureHandled=true;speedLocked=!speedLocked;if(speedLocked){setSpeed(2f);speed.setText("כפול 2 • נעול");speed.setVisibility(View.VISIBLE);}else{setSpeed(1f);toast("נעילת כפול 2 בוטלה");}}return true;}
+            if(longPressing&&prefs.getBoolean("speedLock",true)&&e.getY()-downY>90&&!lockGestureHandled){lockGestureHandled=true;speedLocked=!speedLocked;if(speedLocked){setSpeed(2f);}else{setSpeed(1f);toast("נעילת כפול 2 בוטלה");}}return true;}
         if(e.getAction()==MotionEvent.ACTION_UP){if(hiddenSeekDragging){hiddenSeekDragging=false;if(!prefs.getBoolean("showSeekBar",true))seekBar.setVisibility(View.GONE);return true;}if(longPressRunnable!=null){handler.removeCallbacks(longPressRunnable);longPressRunnable=null;}if(longPressing){if(!speedLocked)setSpeed(1f);longPressing=false;scheduleControlsHide();return true;}
             if(moved){float d=e.getY()-downY;if(Math.abs(d)>90){if(d<0)next();else prev();}return true;}
             if(System.currentTimeMillis()-downTime<300){if(doubleTapPending){doubleTapPending=false;
@@ -274,18 +275,39 @@ public class MainActivity extends Activity implements TextureView.SurfaceTexture
         if (player==null) return;
         int target=Math.max(0,Math.min(player.getDuration(),player.getCurrentPosition()+ms));
         player.seekTo(target);
-        speed.setText("+10");
-        speed.setVisibility(View.VISIBLE);
-        handler.postDelayed(()->speed.setVisibility(View.GONE),500);
+        toast(ms>0?"+10 שניות":"-10 שניות");
     }
 
-    void resetPlaybackSpeed(){ if(player!=null) try{player.setPlaybackParams(new PlaybackParams().setSpeed(1f));}catch(Exception ignored){} speed.setVisibility(View.GONE); speedLocked=false; }
+    void resetPlaybackSpeed(){ if(player!=null) try{player.setPlaybackParams(new PlaybackParams().setSpeed(1f));}catch(Exception ignored){} stopSpeedIndicator(); speedLocked=false; }
 
     void setSpeed(float s) {
         if (player==null) return;
         try { player.setPlaybackParams(new PlaybackParams().setSpeed(s)); } catch(Exception ignored){}
-        speed.setText(s>1 ? "כפול 2" : "");
-        speed.setVisibility(s>1 ? View.VISIBLE : View.GONE);
+        if(s>1){ startSpeedIndicator(); } else { stopSpeedIndicator(); }
+    }
+
+    void startSpeedIndicator(){
+        if(speed==null)return;
+        speed.setText("➤ ➤ ➤");
+        speed.setTextDirection(View.TEXT_DIRECTION_LTR);
+        speed.setVisibility(View.VISIBLE);
+        if(speedAnimator!=null) speedAnimator.cancel();
+        speed.setAlpha(0.35f);
+        speed.setTranslationX(-8f);
+        speedAnimator=android.animation.ObjectAnimator.ofPropertyValuesHolder(
+            speed,
+            android.animation.PropertyValuesHolder.ofFloat("translationX",-8f,8f),
+            android.animation.PropertyValuesHolder.ofFloat("alpha",0.35f,1f)
+        );
+        speedAnimator.setDuration(650);
+        speedAnimator.setRepeatCount(android.animation.ValueAnimator.INFINITE);
+        speedAnimator.setRepeatMode(android.animation.ValueAnimator.REVERSE);
+        speedAnimator.start();
+    }
+
+    void stopSpeedIndicator(){
+        if(speedAnimator!=null){speedAnimator.cancel();speedAnimator=null;}
+        if(speed!=null){speed.setVisibility(View.GONE);speed.setAlpha(1f);speed.setTranslationX(0f);}
     }
 
     void pick() {
@@ -418,7 +440,7 @@ public class MainActivity extends Activity implements TextureView.SurfaceTexture
         handler.post(progressUpdater);
     }
 
-    void releasePlayer(){ speedLocked=false;setControlsVisible(true);if(progressUpdater!=null)handler.removeCallbacks(progressUpdater);progressUpdater=null;if(player!=null){try{player.setPlaybackParams(new PlaybackParams().setSpeed(1f));}catch(Exception ignored){}try{player.stop();}catch(Exception ignored){}player.release();player=null;}if(seekBar!=null)seekBar.setProgress(0);if(timeText!=null)timeText.setText("00:00 / 00:00");}
+    void releasePlayer(){ stopSpeedIndicator(); speedLocked=false;setControlsVisible(true);if(progressUpdater!=null)handler.removeCallbacks(progressUpdater);progressUpdater=null;if(player!=null){try{player.setPlaybackParams(new PlaybackParams().setSpeed(1f));}catch(Exception ignored){}try{player.stop();}catch(Exception ignored){}player.release();player=null;}if(seekBar!=null)seekBar.setProgress(0);if(timeText!=null)timeText.setText("00:00 / 00:00");}
 
     void next(){speedLocked=false;if(!items.isEmpty()){pos=(pos+1)%items.size();render();}}
     void prev(){speedLocked=false;if(!items.isEmpty()){pos=(pos-1+items.size())%items.size();render();}}
