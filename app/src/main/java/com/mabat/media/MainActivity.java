@@ -164,7 +164,8 @@ public class MainActivity extends Activity implements TextureView.SurfaceTexture
         Button zoom=new Button(this);zoom.setText("גודל סרטון: "+prefs.getInt("videoZoom",96)+"%");zoom.setOnClickListener(v->showZoomSetup());
         Button colors=new Button(this);colors.setText("🎨 צבעי האפליקציה");colors.setOnClickListener(v->showColorSettings());
         Button guideBtn=new Button(this);guideBtn.setText("📖 מדריך והוראות");guideBtn.setAllCaps(false);guideBtn.setOnClickListener(v->showGuide());
-        box.addView(a);box.addView(g);box.addView(sp);box.addView(l);box.addView(ap);box.addView(tr);box.addView(zoom);box.addView(colors);box.addView(guideBtn);
+        Button aboutBtn=new Button(this);aboutBtn.setText("ℹ️ אודות");aboutBtn.setAllCaps(false);aboutBtn.setOnClickListener(v->showAbout());
+        box.addView(a);box.addView(g);box.addView(sp);box.addView(l);box.addView(ap);box.addView(tr);box.addView(zoom);box.addView(colors);box.addView(guideBtn);box.addView(aboutBtn);
         new AlertDialog.Builder(this).setTitle("⚙ הגדרות טיק דוס").setView(box)
             .setPositiveButton("שמור",(d,w)->prefs.edit().putBoolean("autoHide",a.isChecked()).putBoolean("gestureDoubleTap",g.isChecked()).putBoolean("longSpeed",sp.isChecked()).putBoolean("speedLock",l.isChecked()).putBoolean("autoPlay",ap.isChecked()).putBoolean("transitionAnim",tr.isChecked()).apply())
             .setNegativeButton("ביטול",null).show();
@@ -405,25 +406,79 @@ public class MainActivity extends Activity implements TextureView.SurfaceTexture
 
     void next(){speedLocked=false;if(!items.isEmpty()){pos=(pos+1)%items.size();render();}}
     void prev(){speedLocked=false;if(!items.isEmpty()){pos=(pos-1+items.size())%items.size();render();}}
+    TextView makeInfoText(String text){
+        TextView t=new TextView(this);
+        t.setText(text);
+        t.setTextSize(15);
+        t.setTextColor(0xFFE8E8F0);
+        t.setGravity(Gravity.RIGHT);
+        t.setTextDirection(View.TEXT_DIRECTION_RTL);
+        t.setLineSpacing(0,1.12f);
+        t.setPadding(22,16,22,16);
+        return t;
+    }
+
     void showGuide(){
         ScrollView scroll=new ScrollView(this);
-        TextView guide=new TextView(this);
-        guide.setTextSize(15);
-        guide.setTextColor(0xFF222222);
-        guide.setPadding(22,12,22,12);
-        guide.setText("📖 מדריך מלא לטיק דוס\n\n"+
+        scroll.setBackgroundColor(0xFF15151D);
+        TextView guide=makeInfoText(
+            "📖 מדריך מלא לטיק דוס\n\n"+
             "🏠 מסך הבית\n• הלוגו למעלה הוא הלוגו של האפליקציה.\n• ״הוסף תיקיות״ – בוחרים תיקייה מהמכשיר ואפשר להוסיף כמה.\n• ״פתח את הפיד״ – סורק את התיקיות ומציג תמונות וסרטונים.\n\n"+
-            "🎬 צפייה בפיד\n• החלקה למעלה – פריט הבא.\n• החלקה למטה – פריט קודם.\n• לחיצה – הפעלה או עצירה.\n• דאבל־טאפ במרכז – הפעלה/עצירה; בצדדים – קפיצה של 10 שניות.\n• לחיצה ארוכה – מהירות כפול 2.\n• בסיום סרטון עוברים לפריט הבא.\n• כפתור החזרה בפינה העליונה והשיתוף בפינה שממול.\n\n"+
+            "🎬 צפייה בפיד\n• החלקה למעלה – פריט הבא.\n• החלקה למטה – פריט קודם.\n• לחיצה – הפעלה או עצירה.\n• דאבל־טאפ במרכז – הפעלה/עצירה; בצדדים – קפיצה של 10 שניות.\n• לחיצה ארוכה – מהירות כפול 2.\n• כפתור החזרה בפינה העליונה והשיתוף בפינה שממול.\n\n"+
             "⚙️ הגדרות\n• הסתרת כפתורים – מסתירה את הפקדים אחרי 2 שניות.\n• דאבל־טאפ – מפעיל או מבטל את פעולות הדאבל־טאפ.\n• לחיצה ארוכה – מפעילה או מבטלת כפול 2.\n• נעילת כפול 2 – נועלת את המהירות בזמן לחיצה ארוכה.\n• הפעלה אוטומטית – קובעת אם סרטון חדש יתחיל מיד.\n• אנימציית מעבר – מעבר חלק בין פריטים.\n• גודל סרטון – שינוי זום עם תצוגה מקדימה חיה.\n\n"+
             "🎨 צבעי האפליקציה\n• צבעים מהעיגולים משתנים מיד.\n• אפשר צבע מותאם אישית עם גוון ואטימות.\n• בצבעים בהירים, כולל לבן, הכיתוב הופך לשחור.\n• ״שמור וסגור״ שומר; ״ביטול״ מחזיר את הצבע הקודם.\n\n"+
             "⏸️ יציאה מהאפליקציה\n• ביציאה הסרטון נעצר.\n• בחזרה לאפליקציה הוא לא ממשיך אוטומטית.\n\n"+
             "📤 שיתוף\n• כפתור השיתוף משתף את הפריט שמוצג כרגע.\n\n"+
-            "ℹ️ אודות\nטיק דוס • YB Apps\n\nגרסה 01");
+            "ℹ️ אודות\nטיק דוס • YB Apps\n\nגרסה 01"
+        );
         scroll.addView(guide);
-        new AlertDialog.Builder(this).setTitle("📖 מדריך טיק דוס • גרסה 01").setView(scroll).setPositiveButton("סגור",null).show();
+        AlertDialog dlg=new AlertDialog.Builder(this)
+            .setTitle("📖 מדריך טיק דוס • גרסה 01")
+            .setView(scroll)
+            .setPositiveButton("סגור",null).create();
+        dlg.setOnShowListener(v->{TextView title=dlg.findViewById(android.R.id.alertTitle);if(title!=null){title.setTextDirection(View.TEXT_DIRECTION_RTL);title.setGravity(Gravity.RIGHT);title.setTextColor(0xFFF4F4F8);}dlg.getButton(AlertDialog.BUTTON_POSITIVE).setTextColor(0xFFB9A7FF);});
+        dlg.show();
     }
 
-    void showAbout(){new AlertDialog.Builder(this).setTitle("אודות • גרסה 01").setMessage("טיק דוס\n\nYB Apps\n\nגרסה 01").setPositiveButton("סגור",null).show();}
+    void showAbout(){
+        LinearLayout box=new LinearLayout(this);
+        box.setOrientation(LinearLayout.VERTICAL);
+        box.setGravity(Gravity.CENTER_HORIZONTAL);
+        box.setPadding(24,20,24,12);
+        box.setBackgroundColor(0xFF15151D);
+
+        ImageView logo=new ImageView(this);
+        logo.setImageResource(R.drawable.logo_tikdos);
+        logo.setScaleType(ImageView.ScaleType.CENTER_INSIDE);
+        box.addView(logo,new LinearLayout.LayoutParams(-1,120));
+
+        TextView name=makeInfoText("טיק דוס");
+        name.setGravity(Gravity.CENTER);
+        name.setTextSize(25);
+        name.setTextColor(0xFFF4F4F8);
+        name.setTypeface(Typeface.DEFAULT,Typeface.BOLD);
+        box.addView(name);
+
+        TextView company=makeInfoText("YB Apps");
+        company.setGravity(Gravity.CENTER);
+        company.setTextSize(16);
+        company.setTextColor(0xFFB9A7FF);
+        box.addView(company);
+
+        TextView version=makeInfoText("גרסה 01");
+        version.setGravity(Gravity.CENTER);
+        version.setTextSize(13);
+        version.setTextColor(0xFF9696A8);
+        box.addView(version);
+
+        AlertDialog dlg=new AlertDialog.Builder(this)
+            .setTitle("ℹ️ אודות טיק דוס")
+            .setView(box)
+            .setPositiveButton("סגור",null).create();
+        dlg.setOnShowListener(v->{TextView title=dlg.findViewById(android.R.id.alertTitle);if(title!=null){title.setTextDirection(View.TEXT_DIRECTION_RTL);title.setGravity(Gravity.RIGHT);title.setTextColor(0xFFF4F4F8);}dlg.getButton(AlertDialog.BUTTON_POSITIVE).setTextColor(0xFFB9A7FF);});
+        dlg.show();
+    }
+
     void toast(String s){Toast.makeText(this,s,Toast.LENGTH_SHORT).show();}
 
     @Override public void onSurfaceTextureAvailable(SurfaceTexture st,int w,int h){if(movie.getTag()!=null)prepareVideo((Uri)movie.getTag(),st);}
