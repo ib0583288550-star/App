@@ -40,6 +40,8 @@ public class MainActivity extends Activity implements TextureView.SurfaceTexture
     AlertDialog colorDialog;
     Runnable longPressRunnable;
     boolean returningFromBackground=false;
+    boolean shuffleMode=false;
+    ArrayList<Uri> favorites=new ArrayList<>();
 
     @Override public void onCreate(Bundle b) {
         super.onCreate(b);
@@ -63,6 +65,7 @@ public class MainActivity extends Activity implements TextureView.SurfaceTexture
         movie.setSurfaceTextureListener(this);
 
         loadRoots();
+        loadFavorites();
         applyAccent(prefs.getInt("accentColor",0xFF7C4DFF));
         findViewById(R.id.add).setOnClickListener(v->pick());
         findViewById(R.id.start).setOnClickListener(v->startScan());
@@ -162,7 +165,7 @@ public class MainActivity extends Activity implements TextureView.SurfaceTexture
         CheckBox ap=new CheckBox(this);ap.setText("הפעל סרטון אוטומטית במעבר לפריט");ap.setChecked(prefs.getBoolean("autoPlay",true));
         CheckBox tr=new CheckBox(this);tr.setText("אנימציית מעבר בין סרטונים");tr.setChecked(prefs.getBoolean("transitionAnim",true));
         Button zoom=new Button(this);zoom.setText("גודל סרטון: "+prefs.getInt("videoZoom",96)+"%");zoom.setOnClickListener(v->showZoomSetup());
-        Button colors=new Button(this);colors.setText("🎨 צבעי האפליקציה");colors.setOnClickListener(v->showColorSettings());
+        Button fav=new Button(this);fav.setText("⭐ מועדפים");fav.setAllCaps(false);fav.setOnClickListener(v->{if(favorites.isEmpty()){toast("אין מועדפים עדיין");return;}items.clear();items.addAll(favorites);pos=0;openViewer();});box.addView(fav);Button filter=new Button(this);filter.setText("🔎 חיפוש וסינון");filter.setAllCaps(false);filter.setOnClickListener(v->showFilter());box.addView(filter);Button shuffle=new Button(this);shuffle.setText("🔀 ערבוב פיד");shuffle.setAllCaps(false);shuffle.setOnClickListener(v->{shuffleMode=!shuffleMode;toast(shuffleMode?"ערבוב פעיל":"ערבוב כבוי");});box.addView(shuffle);Button theme=new Button(this);theme.setText("🎨 ערכות עיצוב");theme.setAllCaps(false);theme.setOnClickListener(v->showThemes());box.addView(theme);Button colors=new Button(this);colors.setText("🎨 צבעי האפליקציה");colors.setOnClickListener(v->showColorSettings());
         Button guideBtn=new Button(this);guideBtn.setText("📖 מדריך והוראות");guideBtn.setAllCaps(false);guideBtn.setOnClickListener(v->showGuide());
         Button aboutBtn=new Button(this);aboutBtn.setText("ℹ️ אודות");aboutBtn.setAllCaps(false);aboutBtn.setOnClickListener(v->showAbout());
         box.addView(a);box.addView(g);box.addView(sp);box.addView(l);box.addView(ap);box.addView(tr);box.addView(zoom);box.addView(colors);box.addView(guideBtn);box.addView(aboutBtn);
@@ -225,6 +228,8 @@ public class MainActivity extends Activity implements TextureView.SurfaceTexture
             .setNegativeButton("ביטול",(d,w)->applyAccent(original)).show();
     }
 
+    void showFilter(){EditText q=new EditText(this);q.setHint("שם הקובץ");new AlertDialog.Builder(this).setTitle("🔎 חיפוש וסינון").setView(q).setPositiveButton("חפש",(d,w)->{String x=q.getText().toString().toLowerCase(Locale.ROOT);ArrayList<Uri> f=new ArrayList<>();for(Uri u:items)if(u.toString().toLowerCase(Locale.ROOT).contains(x))f.add(u);if(f.isEmpty()){toast("לא נמצאו תוצאות");return;}items.clear();items.addAll(f);pos=0;openViewer();}).setNegativeButton("ביטול",null).show();}
+    void showThemes(){String[] n={"כהה סגול","שחור","כחול","ירוק"};int[] c={0xFF7C4DFF,0xFF111111,0xFF2196F3,0xFF00A878};new AlertDialog.Builder(this).setTitle("🎨 ערכת עיצוב").setItems(n,(d,w)->applyAccent(c[w])).show();}
     void showCustomColorDialog(){
         final int original=prefs.getInt("accentColor",0xFF7C4DFF);
         LinearLayout box=new LinearLayout(this);box.setOrientation(LinearLayout.VERTICAL);box.setPadding(20,8,20,8);
@@ -300,6 +305,9 @@ public class MainActivity extends Activity implements TextureView.SurfaceTexture
         }
     }
 
+    void saveFavorites(){StringBuilder b=new StringBuilder();for(Uri u:favorites){if(b.length()>0)b.append("\n");b.append(u);}likes.edit().putString("favorites",b.toString()).apply();}
+    void loadFavorites(){String s=likes.getString("favorites","");if(!s.isEmpty())for(String x:s.split("\\n"))try{favorites.add(Uri.parse(x));}catch(Exception ignored){}}
+    void toggleFavorite(){if(items.isEmpty())return;Uri u=items.get(pos);if(favorites.contains(u)){favorites.remove(u);toast("הוסר מהמועדפים");}else{favorites.add(u);toast("נוסף למועדפים ⭐");}saveFavorites();}
     void share(){if(items.isEmpty())return;Uri u=items.get(pos);String mime=getContentResolver().getType(u);Intent i=new Intent(Intent.ACTION_SEND);i.setType(mime!=null?mime:"*/*");i.putExtra(Intent.EXTRA_STREAM,u);i.addFlags(Intent.FLAG_GRANT_READ_URI_PERMISSION);startActivity(Intent.createChooser(i,"שיתוף"));}
 
     void showPauseIndicator(){if(pauseIndicator!=null)pauseIndicator.setVisibility(View.VISIBLE);}
@@ -318,7 +326,7 @@ public class MainActivity extends Activity implements TextureView.SurfaceTexture
             final ArrayList<Uri> result=new ArrayList<>(); for(String v:found)result.add(Uri.parse(v));
             Collections.sort(result,(a,b)->a.toString().compareToIgnoreCase(b.toString()));
             runOnUiThread(()->{
-                items.clear();items.addAll(result);scanning=false;
+                items.clear();items.addAll(result);if(shuffleMode)Collections.shuffle(items);scanning=false;
                 if(items.isEmpty()){status.setText("לא נמצאה מדיה בתיקיות שנבחרו");toast("לא נמצאה מדיה בתיקיות שנבחרו");return;}
                 status.setText("נמצאו "+items.size()+" פריטי מדיה. אפשר להתחיל לצפות.");pos=0;openViewer();
             });
