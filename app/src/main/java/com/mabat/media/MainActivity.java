@@ -105,7 +105,7 @@ public class MainActivity extends Activity implements TextureView.SurfaceTexture
     }
 
     void setControlsVisible(boolean visible){int v=visible?View.VISIBLE:View.GONE;findViewById(R.id.actionColumn).setVisibility(v);findViewById(R.id.bottomInfo).setVisibility(v);count.setVisibility(v);timeText.setVisibility(v);findViewById(R.id.back).setVisibility(v);seekBar.setVisibility(prefs.getBoolean("showSeekBar",true)?v:View.GONE);}
-    void scheduleControlsHide(){if(!prefs.getBoolean("autoHide",true))return;handler.postDelayed(()->{if(player!=null&&player.isPlaying())setControlsVisible(false);},2000);}
+    void scheduleControlsHide(){if(!prefs.getBoolean("autoHide",true))return;handler.postDelayed(()->{if(player!=null&&player.isPlaying())setControlsVisible(false);},prefs.getInt("hideDelay",2)*1000L);}
     void showFirstZoomSetup(){
         LinearLayout box=new LinearLayout(this);box.setOrientation(LinearLayout.VERTICAL);box.setPadding(24,8,24,4);
         TextView info=new TextView(this);info.setText("בחר את גודל הסרטון שנוח לך. אפשר לשנות את זה אחר כך בהגדרות.");info.setTextSize(16);info.setPadding(0,0,0,10);box.addView(info);
@@ -161,7 +161,7 @@ public class MainActivity extends Activity implements TextureView.SurfaceTexture
     void showSettings(){
         LinearLayout box=new LinearLayout(this);box.setOrientation(LinearLayout.VERTICAL);box.setPadding(18,8,18,4);
         TextView hint=new TextView(this);hint.setText("התאם את טיק דוס בדיוק איך שנוח לך");hint.setTextColor(0xFF888896);hint.setTextSize(13);hint.setPadding(4,0,4,10);box.addView(hint);
-        CheckBox a=new CheckBox(this);a.setText("הסתרת כפתורים אחרי 2 שניות");a.setChecked(prefs.getBoolean("autoHide",true));
+        CheckBox a=new CheckBox(this);a.setText("הסתרת כפתורים אוטומטית");a.setChecked(prefs.getBoolean("autoHide",true));
         CheckBox g=new CheckBox(this);g.setText("דאבל־טאפ: אחורה / קדימה");g.setChecked(prefs.getBoolean("gestureDoubleTap",true));
         CheckBox sp=new CheckBox(this);sp.setText("לחיצה ארוכה = כפול 2");sp.setChecked(prefs.getBoolean("longSpeed",true));
         CheckBox l=new CheckBox(this);l.setText("נעילת כפול 2 בהחלקה למטה");l.setChecked(prefs.getBoolean("speedLock",true));
@@ -173,7 +173,8 @@ public class MainActivity extends Activity implements TextureView.SurfaceTexture
         Button fav=new Button(this);fav.setText("⭐ מועדפים");fav.setAllCaps(false);fav.setOnClickListener(v->{if(favorites.isEmpty()){toast("אין מועדפים עדיין");return;}items.clear();items.addAll(favorites);pos=0;openViewer();});box.addView(fav);Button filter=new Button(this);filter.setText("🔎 חיפוש וסינון");filter.setAllCaps(false);filter.setOnClickListener(v->showFilter());box.addView(filter);Button theme=new Button(this);theme.setText("🎨 ערכות עיצוב");theme.setAllCaps(false);theme.setOnClickListener(v->showThemes());box.addView(theme);Button colors=new Button(this);colors.setText("🎨 צבעי האפליקציה");colors.setOnClickListener(v->showColorSettings());
         Button guideBtn=new Button(this);guideBtn.setText("📖 מדריך והוראות");guideBtn.setAllCaps(false);guideBtn.setOnClickListener(v->showGuide());
         Button aboutBtn=new Button(this);aboutBtn.setText("ℹ️ אודות");aboutBtn.setAllCaps(false);aboutBtn.setOnClickListener(v->showAbout());
-        box.addView(a);box.addView(g);box.addView(sp);box.addView(l);box.addView(ap);box.addView(tr);box.addView(sl);box.addView(sb);box.addView(zoom);box.addView(colors);box.addView(guideBtn);box.addView(aboutBtn);
+        Button hideDelay=new Button(this);hideDelay.setText("זמן הסתרת כפתורים: "+prefs.getInt("hideDelay",2)+" שניות");hideDelay.setAllCaps(false);hideDelay.setOnClickListener(v->{String[] opts={"1 שנייה","2 שניות","3 שניות","4 שניות","5 שניות"};new AlertDialog.Builder(this).setTitle("אחרי כמה זמן להסתיר?").setSingleChoiceItems(opts,prefs.getInt("hideDelay",2)-1,(d,w)->{prefs.edit().putInt("hideDelay",w+1).apply();hideDelay.setText("זמן הסתרת כפתורים: "+(w+1)+" שניות");d.dismiss();}).show();});
+        box.addView(a);box.addView(hideDelay);box.addView(g);box.addView(sp);box.addView(l);box.addView(ap);box.addView(tr);box.addView(sl);box.addView(sb);box.addView(zoom);box.addView(colors);box.addView(guideBtn);box.addView(aboutBtn);
         new AlertDialog.Builder(this).setTitle("⚙ הגדרות טיק דוס").setView(box)
             .setPositiveButton("שמור",(d,w)->prefs.edit().putBoolean("autoHide",a.isChecked()).putBoolean("gestureDoubleTap",g.isChecked()).putBoolean("longSpeed",sp.isChecked()).putBoolean("speedLock",l.isChecked()).putBoolean("autoPlay",ap.isChecked()).putBoolean("transitionAnim",tr.isChecked()).putBoolean("showScreenLock",sl.isChecked()).putBoolean("showSeekBar",sb.isChecked()).apply());
             .setNegativeButton("ביטול",null).show();
