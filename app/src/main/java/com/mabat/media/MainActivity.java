@@ -53,6 +53,7 @@ public class MainActivity extends Activity implements TextureView.SurfaceTexture
             View.SYSTEM_UI_FLAG_LAYOUT_HIDE_NAVIGATION | View.SYSTEM_UI_FLAG_LAYOUT_STABLE
         );
         setContentView(R.layout.activity_main);
+        showOpeningAnimation();
 
         home=findViewById(R.id.home); viewer=findViewById(R.id.viewer);
         picture=findViewById(R.id.picture); movie=findViewById(R.id.movie);
@@ -86,7 +87,6 @@ public class MainActivity extends Activity implements TextureView.SurfaceTexture
         movie.setOnTouchListener((v,e)->handleTouch(e));
         picture.setOnTouchListener((v,e)->handleTouch(e));
         viewer.setOnTouchListener((v,e)->handleTouch(e));
-        if(!prefs.getBoolean("zoomConfigured",false)) handler.postDelayed(this::showFirstZoomSetup,350);
     }
 
     boolean handleTouch(MotionEvent e) {
@@ -106,56 +106,31 @@ public class MainActivity extends Activity implements TextureView.SurfaceTexture
 
     void setControlsVisible(boolean visible){int v=visible?View.VISIBLE:View.GONE;findViewById(R.id.actionColumn).setVisibility(v);findViewById(R.id.bottomInfo).setVisibility(v);count.setVisibility(v);timeText.setVisibility(v);findViewById(R.id.back).setVisibility(v);seekBar.setVisibility(prefs.getBoolean("showSeekBar",true)?v:View.GONE);}
     void scheduleControlsHide(){if(!prefs.getBoolean("autoHide",true))return;handler.postDelayed(()->{if(player!=null&&player.isPlaying())setControlsVisible(false);},prefs.getInt("hideDelay",2)*1000L);}
-    void showFirstZoomSetup(){
-        LinearLayout box=new LinearLayout(this);box.setOrientation(LinearLayout.VERTICAL);box.setPadding(24,8,24,4);
-        TextView info=new TextView(this);info.setText("בחר את גודל הסרטון שנוח לך. אפשר לשנות את זה אחר כך בהגדרות.");info.setTextSize(16);info.setPadding(0,0,0,10);box.addView(info);
-        DemoPreviewView demo=new DemoPreviewView(this); demo.setLayoutParams(new LinearLayout.LayoutParams(-1,360)); box.addView(demo);
-        SeekBar z=new SeekBar(this);z.setMax(20);z.setProgress(8);box.addView(z);
-        TextView value=new TextView(this);value.setText("גודל: 96%");value.setGravity(Gravity.CENTER);box.addView(value);
-        z.setOnSeekBarChangeListener(new SeekBar.OnSeekBarChangeListener(){
-            public void onProgressChanged(SeekBar b,int p,boolean fromUser){value.setText("גודל: "+(88+p)+"%");demo.setScaleFactor((88+p)/100f);}
-            public void onStartTrackingTouch(SeekBar b){}
-            public void onStopTrackingTouch(SeekBar b){}
-        });
-        new AlertDialog.Builder(this).setTitle("הגדרת גודל הסרטון").setMessage("בפעם הראשונה בלבד").setView(box)
-            .setPositiveButton("שמור",(d,w)->prefs.edit().putInt("videoZoom",88+z.getProgress()).putBoolean("zoomConfigured",true).apply())
-            .setNegativeButton("ברירת מחדל",(d,w)->prefs.edit().putInt("videoZoom",96).putBoolean("zoomConfigured",true).apply()).setCancelable(false).show();
-    }
-
-    void showZoomSetup(){
-        LinearLayout box=new LinearLayout(this);box.setOrientation(LinearLayout.VERTICAL);box.setPadding(24,8,24,4);
-        DemoPreviewView demo=new DemoPreviewView(this);
-        LinearLayout.LayoutParams demoParams=new LinearLayout.LayoutParams(-1,420);
-        demo.setLayoutParams(demoParams);
-        box.addView(demo);
-        SeekBar z=new SeekBar(this);z.setMax(20);z.setProgress(Math.max(0,Math.min(20,prefs.getInt("videoZoom",96)-88)));
-        TextView value=new TextView(this);value.setText("גודל: "+(88+z.getProgress())+"%");value.setGravity(Gravity.CENTER);box.addView(z);box.addView(value);
-        z.setOnSeekBarChangeListener(new SeekBar.OnSeekBarChangeListener(){
-            public void onProgressChanged(SeekBar b,int p,boolean fromUser){value.setText("גודל: "+(88+p)+"%");demo.setScaleFactor((88+p)/100f);}
-            public void onStartTrackingTouch(SeekBar b){}
-            public void onStopTrackingTouch(SeekBar b){}
-        });
-        new AlertDialog.Builder(this).setTitle("גודל סרטון").setView(box).setPositiveButton("שמור",(d,w)->{prefs.edit().putInt("videoZoom",88+z.getProgress()).putBoolean("zoomConfigured",true).apply();if(player!=null)fitVideo(player.getVideoWidth(),player.getVideoHeight());}).setNegativeButton("ביטול",null).show();
-    }
-
-    class DemoPreviewView extends View {
-        Paint paint=new Paint(Paint.ANTI_ALIAS_FLAG);
-        float scaleFactor=1f;
-        long started=System.currentTimeMillis();
-        DemoPreviewView(Context c){super(c);paint.setTypeface(Typeface.create("sans",Typeface.BOLD));}
-        void setScaleFactor(float f){scaleFactor=f;invalidate();}
-        @Override protected void onDraw(Canvas c){
-            c.drawColor(Color.BLACK);
-            float w=getWidth(),h=getHeight();
-            c.save(); c.translate(w/2f,h/2f); c.scale(scaleFactor,scaleFactor);
-            float vw=Math.min(w*.62f,260f), vh=vw*1.78f;
-            paint.setColor(Color.rgb(35,35,45));c.drawRoundRect(-vw/2,-vh/2,vw/2,vh/2,24,24,paint);
-            float t=((System.currentTimeMillis()-started)%2200)/2200f;
-            paint.setColor(Color.rgb(124,77,255));c.drawCircle((float)Math.sin(t*Math.PI*2)*vw*.28f,(float)Math.cos(t*Math.PI*2)*vh*.22f,24,paint);
-            paint.setColor(Color.WHITE);paint.setTextAlign(Paint.Align.CENTER);paint.setTextSize(22);c.drawText("הדגמת וידאו",0,10,paint);
-            paint.setTextSize(13);paint.setColor(Color.LTGRAY);c.drawText("כך ייראה גודל הסרטון",0,35,paint);
-            c.restore();postInvalidateDelayed(40);
-        }
+    void showOpeningAnimation(){
+        final ViewGroup root=(ViewGroup)findViewById(android.R.id.content);
+        final LinearLayout splash=new LinearLayout(this);
+        splash.setOrientation(LinearLayout.VERTICAL);
+        splash.setGravity(Gravity.CENTER);
+        splash.setBackgroundColor(0xFF09090F);
+        TextView logo=new TextView(this);
+        logo.setText("טיק דוס");
+        logo.setTextColor(Color.WHITE);
+        logo.setTextSize(42);
+        logo.setGravity(Gravity.CENTER);
+        logo.setTypeface(Typeface.create("sans",Typeface.BOLD));
+        TextView sub=new TextView(this);
+        sub.setText("YB Apps");
+        sub.setTextColor(0xFFBDB8FF);
+        sub.setTextSize(16);
+        sub.setGravity(Gravity.CENTER);
+        splash.addView(logo,new LinearLayout.LayoutParams(-1,-2));
+        splash.addView(sub,new LinearLayout.LayoutParams(-1,-2));
+        root.addView(splash,new ViewGroup.LayoutParams(-1,-1));
+        splash.setAlpha(0f);
+        splash.setScaleX(.92f); splash.setScaleY(.92f);
+        splash.animate().alpha(1f).scaleX(1f).scaleY(1f).setDuration(420).setInterpolator(new AccelerateDecelerateInterpolator()).withEndAction(()->{
+            splash.animate().alpha(0f).scaleX(1.06f).scaleY(1.06f).setStartDelay(420).setDuration(380).setInterpolator(new AccelerateDecelerateInterpolator()).withEndAction(()->root.removeView(splash)).start();
+        }).start();
     }
 
     void showSettings(){
@@ -169,12 +144,11 @@ public class MainActivity extends Activity implements TextureView.SurfaceTexture
         CheckBox tr=new CheckBox(this);tr.setText("אנימציית מעבר בין סרטונים");tr.setChecked(prefs.getBoolean("transitionAnim",true));
         CheckBox sl=new CheckBox(this);sl.setText("הצג נעילת מסך בנגן");sl.setChecked(prefs.getBoolean("showScreenLock",true));
         CheckBox sb=new CheckBox(this);sb.setText("הצג פס זמן הסרטון");sb.setChecked(prefs.getBoolean("showSeekBar",true));
-        Button zoom=new Button(this);zoom.setText("גודל סרטון: "+prefs.getInt("videoZoom",96)+"%");zoom.setOnClickListener(v->showZoomSetup());
         Button fav=new Button(this);fav.setText("⭐ מועדפים");fav.setAllCaps(false);fav.setOnClickListener(v->{if(favorites.isEmpty()){toast("אין מועדפים עדיין");return;}items.clear();items.addAll(favorites);pos=0;openViewer();});box.addView(fav);Button colors=new Button(this);colors.setText("🎨 צבעי האפליקציה");colors.setOnClickListener(v->showColorSettings());
         Button guideBtn=new Button(this);guideBtn.setText("📖 מדריך והוראות");guideBtn.setAllCaps(false);guideBtn.setOnClickListener(v->showGuide());
         Button aboutBtn=new Button(this);aboutBtn.setText("ℹ️ אודות");aboutBtn.setAllCaps(false);aboutBtn.setOnClickListener(v->showAbout());
         Button hideDelay=new Button(this);hideDelay.setText("זמן הסתרת כפתורים: "+prefs.getInt("hideDelay",2)+" שניות");hideDelay.setAllCaps(false);hideDelay.setOnClickListener(v->{String[] opts={"1 שנייה","2 שניות","3 שניות","4 שניות","5 שניות"};new AlertDialog.Builder(this).setTitle("אחרי כמה זמן להסתיר?").setSingleChoiceItems(opts,prefs.getInt("hideDelay",2)-1,(d,w)->{prefs.edit().putInt("hideDelay",w+1).apply();hideDelay.setText("זמן הסתרת כפתורים: "+(w+1)+" שניות");d.dismiss();}).show();});
-        box.addView(a);box.addView(hideDelay);box.addView(g);box.addView(sp);box.addView(l);box.addView(ap);box.addView(tr);box.addView(sl);box.addView(sb);box.addView(zoom);box.addView(colors);box.addView(guideBtn);box.addView(aboutBtn);
+        box.addView(a);box.addView(hideDelay);box.addView(g);box.addView(sp);box.addView(l);box.addView(ap);box.addView(tr);box.addView(sl);box.addView(sb);box.addView(colors);box.addView(guideBtn);box.addView(aboutBtn);
         new AlertDialog.Builder(this).setTitle("⚙ הגדרות טיק דוס").setView(box)
             .setPositiveButton("שמור",(d,w)->prefs.edit().putBoolean("autoHide",a.isChecked()).putBoolean("gestureDoubleTap",g.isChecked()).putBoolean("longSpeed",sp.isChecked()).putBoolean("speedLock",l.isChecked()).putBoolean("autoPlay",ap.isChecked()).putBoolean("transitionAnim",tr.isChecked()).putBoolean("showScreenLock",sl.isChecked()).putBoolean("showSeekBar",sb.isChecked()).apply())
             .setNegativeButton("ביטול",null).show();
@@ -411,8 +385,7 @@ public class MainActivity extends Activity implements TextureView.SurfaceTexture
         float sx=(float)sw/(float)vw;
         float sy=(float)sh/(float)vh;
         // TextureView transform uses view-space scale: enlarge the texture to exactly fill the screen.
-        float zoom=prefs.getInt("videoZoom",96)/100f;
-        m.setScale(((float)vw/(float)sw)*zoom,((float)vh/(float)sh)*zoom,sw/2f,sh/2f);
+        m.setScale((float)vw/(float)sw,(float)vh/(float)sh,sw/2f,sh/2f);
         movie.setTransform(m);
     }
 
@@ -452,7 +425,7 @@ public class MainActivity extends Activity implements TextureView.SurfaceTexture
             "📖 מדריך מלא לטיק דוס\n\n"+
             "🏠 מסך הבית\n• הלוגו למעלה הוא הלוגו של האפליקציה.\n• ״הוסף תיקיות״ – בוחרים תיקייה מהמכשיר ואפשר להוסיף כמה.\n• ״פתח את הפיד״ – סורק את התיקיות ומציג תמונות וסרטונים.\n\n"+
             "🎬 צפייה בפיד\n• החלקה למעלה – פריט הבא.\n• החלקה למטה – פריט קודם.\n• לחיצה – הפעלה או עצירה.\n• דאבל־טאפ במרכז – הפעלה/עצירה; בצדדים – קפיצה של 10 שניות.\n• לחיצה ארוכה – מהירות כפול 2.\n• כפתור החזרה מציג רק את החץ; כפתור השיתוף נמצא בפינה שממול.\n• כשהפקדים מוסתרים, אפשר לגעת באזור התחתון שבו נמצא פס הזמן כדי לחשוף אותו זמנית, להחליק למיקום הרצוי, וכשעוזבים הוא נעלם שוב אם הוא מוגדר כמוסתר.\n\n"+
-            "⚙️ הגדרות\n• הסתרת כפתורים – אפשר להפעיל או לבטל הסתרה אוטומטית.\n• זמן הסתרת כפתורים – אפשר לבחור 1, 2, 3, 4 או 5 שניות. כשהכפתורים נעלמים, אזור פס הזמן עדיין ניתן להחלקה.\n• פס זמן הסרטון – אפשר להציג או להסתיר את הסליידר. כשהוא מוסתר, נוגעים או מחליקים בדיוק באזור התחתון שבו הוא אמור להיות: הסליידר מתגלה, אפשר לגרור אותו לזמן הרצוי, וברגע שמשחררים הוא נעלם שוב.\n• דאבל־טאפ – מפעיל או מבטל את פעולות הדאבל־טאפ.\n• לחיצה ארוכה – מפעילה או מבטלת כפול 2. היציאה מהאפליקציה והחזרה אליה מאפסות את מהירות ההפעלה ל־1×.\n• נעילת כפול 2 – לחיצה ארוכה והחלקה למטה נועלת; אותה מחווה שוב מבטלת את הנעילה.\n• נעילת מסך – אפשר לבחור אם אייקון הנעילה יוצג בנגן. אפשר גם לנעול ולשחרר את המסך דרך האייקון.\n• הפעלה אוטומטית – קובעת אם סרטון חדש יתחיל מיד.\n• אנימציית מעבר – מעבר חלק בין פריטים.\n• גודל סרטון – שינוי זום עם תצוגה מקדימה חיה.\n\n"+
+            "⚙️ הגדרות\n• הסתרת כפתורים – אפשר להפעיל או לבטל הסתרה אוטומטית.\n• זמן הסתרת כפתורים – אפשר לבחור 1, 2, 3, 4 או 5 שניות. כשהכפתורים נעלמים, אזור פס הזמן עדיין ניתן להחלקה.\n• פס זמן הסרטון – אפשר להציג או להסתיר את הסליידר. כשהוא מוסתר, נוגעים או מחליקים בדיוק באזור התחתון שבו הוא אמור להיות: הסליידר מתגלה, אפשר לגרור אותו לזמן הרצוי, וברגע שמשחררים הוא נעלם שוב.\n• דאבל־טאפ – מפעיל או מבטל את פעולות הדאבל־טאפ.\n• לחיצה ארוכה – מפעילה או מבטלת כפול 2. היציאה מהאפליקציה והחזרה אליה מאפסות את מהירות ההפעלה ל־1×.\n• נעילת כפול 2 – לחיצה ארוכה והחלקה למטה נועלת; אותה מחווה שוב מבטלת את הנעילה.\n• נעילת מסך – אפשר לבחור אם אייקון הנעילה יוצג בנגן. אפשר גם לנעול ולשחרר את המסך דרך האייקון.\n• הפעלה אוטומטית – קובעת אם סרטון חדש יתחיל מיד.\n• אנימציית מעבר – מעבר חלק בין פריטים.\n"+
             "🎨 צבעי האפליקציה\n• צבעים מהעיגולים משתנים מיד.\n• אפשר צבע מותאם אישית עם גוון ואטימות.\n• בצבעים בהירים, כולל לבן, הכיתוב הופך לשחור.\n• ״שמור וסגור״ שומר; ״ביטול״ מחזיר את הצבע הקודם.\n\n"+
             "⏸️ יציאה מהאפליקציה\n• ביציאה הסרטון נעצר.\n• בחזרה לאפליקציה הוא לא ממשיך אוטומטית.\n\n"+
             "📤 שיתוף\n• כפתור השיתוף משתף את הפריט שמוצג כרגע.\n\n"+
