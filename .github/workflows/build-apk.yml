@@ -1,7 +1,7 @@
 name: Build APK
 on:
   push:
-    branches: ["main", "v1.6-responsive-auto"]
+    branches: ["main", "v1.6-responsive-auto", "v1.7-responsive-selectable"]
   workflow_dispatch:
 
 jobs:
