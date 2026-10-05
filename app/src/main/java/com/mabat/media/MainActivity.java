@@ -167,7 +167,7 @@ public class MainActivity extends Activity implements TextureView.SurfaceTexture
         CheckBox ap=new CheckBox(this);ap.setText("הפעל סרטון אוטומטית במעבר לפריט");ap.setChecked(prefs.getBoolean("autoPlay",true));
         CheckBox tr=new CheckBox(this);tr.setText("אנימציית מעבר בין סרטונים");tr.setChecked(prefs.getBoolean("transitionAnim",true));
         Button zoom=new Button(this);zoom.setText("גודל סרטון: "+prefs.getInt("videoZoom",96)+"%");zoom.setOnClickListener(v->showZoomSetup());
-        Button fav=new Button(this);fav.setText("⭐ מועדפים");fav.setAllCaps(false);fav.setOnClickListener(v->{if(favorites.isEmpty()){toast("אין מועדפים עדיין");return;}items.clear();items.addAll(favorites);pos=0;openViewer();});box.addView(fav);Button filter=new Button(this);filter.setText("🔎 חיפוש וסינון");filter.setAllCaps(false);filter.setOnClickListener(v->showFilter());box.addView(filter);Button shuffle=new Button(this);shuffle.setText("🔀 ערבוב פיד");shuffle.setAllCaps(false);shuffle.setOnClickListener(v->{shuffleMode=!shuffleMode;toast(shuffleMode?"ערבוב פעיל":"ערבוב כבוי");});box.addView(shuffle);Button theme=new Button(this);theme.setText("🎨 ערכות עיצוב");theme.setAllCaps(false);theme.setOnClickListener(v->showThemes());box.addView(theme);Button colors=new Button(this);colors.setText("🎨 צבעי האפליקציה");colors.setOnClickListener(v->showColorSettings());
+        Button fav=new Button(this);fav.setText("⭐ מועדפים");fav.setAllCaps(false);fav.setOnClickListener(v->{if(favorites.isEmpty()){toast("אין מועדפים עדיין");return;}items.clear();items.addAll(favorites);pos=0;openViewer();});box.addView(fav);Button filter=new Button(this);filter.setText("🔎 חיפוש וסינון");filter.setAllCaps(false);filter.setOnClickListener(v->showFilter());box.addView(filter);Button theme=new Button(this);theme.setText("🎨 ערכות עיצוב");theme.setAllCaps(false);theme.setOnClickListener(v->showThemes());box.addView(theme);Button colors=new Button(this);colors.setText("🎨 צבעי האפליקציה");colors.setOnClickListener(v->showColorSettings());
         Button guideBtn=new Button(this);guideBtn.setText("📖 מדריך והוראות");guideBtn.setAllCaps(false);guideBtn.setOnClickListener(v->showGuide());
         Button aboutBtn=new Button(this);aboutBtn.setText("ℹ️ אודות");aboutBtn.setAllCaps(false);aboutBtn.setOnClickListener(v->showAbout());
         box.addView(a);box.addView(g);box.addView(sp);box.addView(l);box.addView(ap);box.addView(tr);box.addView(zoom);box.addView(colors);box.addView(guideBtn);box.addView(aboutBtn);
@@ -328,7 +328,7 @@ public class MainActivity extends Activity implements TextureView.SurfaceTexture
             final ArrayList<Uri> result=new ArrayList<>(); for(String v:found)result.add(Uri.parse(v));
             Collections.sort(result,(a,b)->a.toString().compareToIgnoreCase(b.toString()));
             runOnUiThread(()->{
-                items.clear();items.addAll(result);if(shuffleMode)Collections.shuffle(items);scanning=false;
+                items.clear();items.addAll(result);scanning=false;
                 if(items.isEmpty()){status.setText("לא נמצאה מדיה בתיקיות שנבחרו");toast("לא נמצאה מדיה בתיקיות שנבחרו");return;}
                 status.setText("נמצאו "+items.size()+" פריטי מדיה. אפשר להתחיל לצפות.");pos=0;openViewer();
             });
