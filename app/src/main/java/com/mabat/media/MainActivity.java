@@ -72,6 +72,8 @@ public class MainActivity extends Activity implements TextureView.SurfaceTexture
         findViewById(R.id.settings).setOnClickListener(v->showSettings());
         findViewById(R.id.back).setOnClickListener(v->closeViewer());
         share.setOnClickListener(v->share());
+        TextView favView=findViewById(R.id.favorite); if(favView!=null) favView.setOnClickListener(v->toggleFavorite());
+        TextView lockView=findViewById(R.id.lock); if(lockView!=null) lockView.setOnClickListener(v->{screenLocked=!screenLocked;lockView.setText(screenLocked?"🔓":"🔒");toast(screenLocked?"המסך ננעל":"המסך שוחרר");});
         seekBar.setOnSeekBarChangeListener(new SeekBar.OnSeekBarChangeListener(){
             public void onProgressChanged(SeekBar b,int p,boolean fromUser){
                 if(fromUser && player!=null && player.getDuration()>0) player.seekTo((int)((long)p*player.getDuration()/1000L));
@@ -87,8 +89,8 @@ public class MainActivity extends Activity implements TextureView.SurfaceTexture
         if(!prefs.getBoolean("zoomConfigured",false)) handler.postDelayed(this::showFirstZoomSetup,350);
     }
 
-    boolean handleTouch(MotionEvent e) {
-        if(e.getAction()==MotionEvent.ACTION_DOWN){downX=e.getX();downY=e.getY();downTime=System.currentTimeMillis();moved=false;longPressing=false;speedLocked=false;
+    boolean handleTouch(MotionEvent e) {\n        if(screenLocked && e.getAction()!=MotionEvent.ACTION_DOWN) return true;
+        if(e.getAction()==MotionEvent.ACTION_DOWN){ if(screenLocked)return true;downX=e.getX();downY=e.getY();downTime=System.currentTimeMillis();moved=false;longPressing=false;speedLocked=false;
             if(isVideo()&&prefs.getBoolean("longSpeed",true)){ longPressRunnable=()->{if(!moved&&isVideo()){longPressing=true;setSpeed(2f);}}; handler.postDelayed(longPressRunnable,320); } return true;}
         if(e.getAction()==MotionEvent.ACTION_MOVE){if(Math.abs(e.getX()-downX)>35||Math.abs(e.getY()-downY)>35)moved=true;
             if(longPressing&&prefs.getBoolean("speedLock",true)&&e.getY()-downY>90){speedLocked=true;speed.setText("כפול 2 • נעול");speed.setVisibility(View.VISIBLE);}return true;}
