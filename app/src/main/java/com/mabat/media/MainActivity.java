@@ -108,9 +108,6 @@ public class MainActivity extends Activity implements TextureView.SurfaceTexture
             // normal swipe threshold only after the long-press has actually fired.
             if(longPressing&&lockZoneCandidate&&prefs.getBoolean("speedLock",true)&&
                e.getY()-downY>90&&!lockGestureHandled){
-            // hold there first, then drag further downward. Normal swipes never lock x2.
-            if(longPressing&&lockZoneCandidate&&prefs.getBoolean("speedLock",true)&&
-               e.getY()-downY>90&&!lockGestureHandled){
                 lockGestureHandled=true;
                 speedLocked=!speedLocked;
                 setSpeed(speedLocked?2f:1f);
