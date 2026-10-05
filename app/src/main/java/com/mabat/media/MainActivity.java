@@ -105,7 +105,7 @@ public class MainActivity extends Activity implements TextureView.SurfaceTexture
 
             float w=Math.max(1,viewer.getWidth());
             lockZoneCandidate=e.getX()<=w*0.30f || e.getX()>=w*0.70f;
-            hiddenSeekDragging=(seekBar.getVisibility()!=View.VISIBLE&&player!=null&&player.getDuration()>0);
+            hiddenSeekDragging=(seekBar.getVisibility()!=View.VISIBLE&&player!=null&&player.getDuration()>0&&e.getY()>=viewer.getHeight()*0.82f);
 
             // Every normal touch pauses immediately.
             if(player!=null && player.isPlaying()){
