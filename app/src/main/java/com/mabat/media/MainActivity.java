@@ -53,7 +53,6 @@ public class MainActivity extends Activity implements TextureView.SurfaceTexture
             View.SYSTEM_UI_FLAG_LAYOUT_HIDE_NAVIGATION | View.SYSTEM_UI_FLAG_LAYOUT_STABLE
         );
         setContentView(R.layout.activity_main);
-        applyScreenAdaptation();
         showOpeningAnimation();
 
         home=findViewById(R.id.home); viewer=findViewById(R.id.viewer);
@@ -64,6 +63,7 @@ public class MainActivity extends Activity implements TextureView.SurfaceTexture
         seekBar=findViewById(R.id.seekBar); timeText=findViewById(R.id.timeText);
         likes=getSharedPreferences("likes",0);
         prefs=getSharedPreferences("settings",0);
+        applyScreenAdaptation();
         movie.setSurfaceTextureListener(this);
 
         loadRoots();
