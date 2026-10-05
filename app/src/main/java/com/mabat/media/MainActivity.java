@@ -53,7 +53,6 @@ public class MainActivity extends Activity implements TextureView.SurfaceTexture
             View.SYSTEM_UI_FLAG_LAYOUT_HIDE_NAVIGATION | View.SYSTEM_UI_FLAG_LAYOUT_STABLE
         );
         setContentView(R.layout.activity_main);
-        applyScreenAdaptation();
         showOpeningAnimation();
 
         home=findViewById(R.id.home); viewer=findViewById(R.id.viewer);
@@ -64,6 +63,7 @@ public class MainActivity extends Activity implements TextureView.SurfaceTexture
         seekBar=findViewById(R.id.seekBar); timeText=findViewById(R.id.timeText);
         likes=getSharedPreferences("likes",0);
         prefs=getSharedPreferences("settings",0);
+        applyScreenAdaptation();
         movie.setSurfaceTextureListener(this);
 
         loadRoots();
@@ -173,7 +173,7 @@ public class MainActivity extends Activity implements TextureView.SurfaceTexture
         String currentMode=prefs.getString("screenAdaptation","auto");
         screenMode.setText("התאמת מסך: "+("small".equals(currentMode)?"מסך קטן":"normal".equals(currentMode)?"מסך רגיל":"large".equals(currentMode)?"מסך גדול":"אוטומטי"));
         screenMode.setAllCaps(false);
-        screenMode.setOnClickListener(v->{String[] opts={"אוטומטי","מסך קטן","מסך רגיל","מסך גדול"};int checked={"auto".equals(currentMode)?0:"small".equals(currentMode)?1:"normal".equals(currentMode)?2:3;new AlertDialog.Builder(this).setTitle("התאמת מסך").setSingleChoiceItems(opts,checked,(d,w)->{String m=w==0?"auto":w==1?"small":w==2?"normal":"large";prefs.edit().putString("screenAdaptation",m).apply();applyScreenAdaptation();screenMode.setText("התאמת מסך: "+opts[w]);d.dismiss();}).show();});
+        screenMode.setOnClickListener(v->{String[] opts={"אוטומטי","מסך קטן","מסך רגיל","מסך גדול"};String mode=prefs.getString("screenAdaptation","auto");int checked="auto".equals(mode)?0:"small".equals(mode)?1:"normal".equals(mode)?2:3;new AlertDialog.Builder(this).setTitle("התאמת מסך").setSingleChoiceItems(opts,checked,(d,w)->{String m=w==0?"auto":w==1?"small":w==2?"normal":"large";prefs.edit().putString("screenAdaptation",m).apply();applyScreenAdaptation();screenMode.setText("התאמת מסך: "+opts[w]);d.dismiss();}).show();});
         box.addView(screenMode);
         Button hideDelay=new Button(this);hideDelay.setText("זמן הסתרת כפתורים: "+prefs.getInt("hideDelay",2)+" שניות");hideDelay.setAllCaps(false);hideDelay.setOnClickListener(v->{String[] opts={"1 שנייה","2 שניות","3 שניות","4 שניות","5 שניות"};new AlertDialog.Builder(this).setTitle("אחרי כמה זמן להסתיר?").setSingleChoiceItems(opts,prefs.getInt("hideDelay",2)-1,(d,w)->{prefs.edit().putInt("hideDelay",w+1).apply();hideDelay.setText("זמן הסתרת כפתורים: "+(w+1)+" שניות");d.dismiss();}).show();});
         box.addView(a);box.addView(hideDelay);box.addView(g);box.addView(sp);box.addView(l);box.addView(ap);box.addView(tr);box.addView(sl);box.addView(sb);box.addView(colors);box.addView(guideBtn);box.addView(aboutBtn);
