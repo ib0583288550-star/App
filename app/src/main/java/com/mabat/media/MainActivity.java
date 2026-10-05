@@ -163,7 +163,8 @@ public class MainActivity extends Activity implements TextureView.SurfaceTexture
         CheckBox tr=new CheckBox(this);tr.setText("אנימציית מעבר בין סרטונים");tr.setChecked(prefs.getBoolean("transitionAnim",true));
         Button zoom=new Button(this);zoom.setText("גודל סרטון: "+prefs.getInt("videoZoom",96)+"%");zoom.setOnClickListener(v->showZoomSetup());
         Button colors=new Button(this);colors.setText("🎨 צבעי האפליקציה");colors.setOnClickListener(v->showColorSettings());
-        box.addView(a);box.addView(g);box.addView(sp);box.addView(l);box.addView(ap);box.addView(tr);box.addView(zoom);box.addView(colors);
+        Button guideBtn=new Button(this);guideBtn.setText("📖 מדריך והוראות");guideBtn.setAllCaps(false);guideBtn.setOnClickListener(v->showGuide());
+        box.addView(a);box.addView(g);box.addView(sp);box.addView(l);box.addView(ap);box.addView(tr);box.addView(zoom);box.addView(colors);box.addView(guideBtn);
         new AlertDialog.Builder(this).setTitle("⚙ הגדרות טיק דוס").setView(box)
             .setPositiveButton("שמור",(d,w)->prefs.edit().putBoolean("autoHide",a.isChecked()).putBoolean("gestureDoubleTap",g.isChecked()).putBoolean("longSpeed",sp.isChecked()).putBoolean("speedLock",l.isChecked()).putBoolean("autoPlay",ap.isChecked()).putBoolean("transitionAnim",tr.isChecked()).apply())
             .setNegativeButton("ביטול",null).show();
@@ -410,18 +411,19 @@ public class MainActivity extends Activity implements TextureView.SurfaceTexture
         guide.setTextSize(15);
         guide.setTextColor(0xFF222222);
         guide.setPadding(22,12,22,12);
-        guide.setText("📖 מדריך מלא לטיק דוס\\n\\n"+
-            "🏠 מסך הבית\\n• הלוגו למעלה הוא הלוגו של האפליקציה.\\n• ״הוסף תיקיות״ – בוחרים תיקייה מהמכשיר ואפשר להוסיף כמה.\\n• ״פתח את הפיד״ – סורק את התיקיות ומציג תמונות וסרטונים.\\n\\n"+
-            "🎬 צפייה בפיד\\n• החלקה למעלה – פריט הבא.\\n• החלקה למטה – פריט קודם.\\n• לחיצה – הפעלה או עצירה.\\n• דאבל־טאפ במרכז – הפעלה/עצירה; בצדדים – קפיצה של 10 שניות.\\n• לחיצה ארוכה – מהירות כפול 2.\\n• בסיום סרטון עוברים לפריט הבא.\\n• כפתור החזרה בפינה העליונה והשיתוף בפינה שממול.\\n\\n"+
-            "⚙️ הגדרות\\n• הסתרת כפתורים – מסתירה את הפקדים אחרי 2 שניות.\\n• דאבל־טאפ – מפעיל או מבטל את פעולות הדאבל־טאפ.\\n• לחיצה ארוכה – מפעילה או מבטלת כפול 2.\\n• נעילת כפול 2 – נועלת את המהירות בזמן לחיצה ארוכה.\\n• הפעלה אוטומטית – קובעת אם סרטון חדש יתחיל מיד.\\n• אנימציית מעבר – מעבר חלק בין פריטים.\\n• גודל סרטון – שינוי זום עם תצוגה מקדימה חיה.\\n\\n"+
-            "🎨 צבעי האפליקציה\\n• צבעים מהעיגולים משתנים מיד.\\n• אפשר צבע מותאם אישית עם גוון ואטימות.\\n• בצבעים בהירים, כולל לבן, הכיתוב הופך לשחור.\\n• ״שמור וסגור״ שומר; ״ביטול״ מחזיר את הצבע הקודם.\\n\\n"+
-            "⏸️ יציאה מהאפליקציה\\n• ביציאה הסרטון נעצר.\\n• בחזרה לאפליקציה הוא לא ממשיך אוטומטית.\\n\\n"+
-            "📤 שיתוף\\n• כפתור השיתוף משתף את הפריט שמוצג כרגע.\\n\\nℹ️ אודות\\nטיק דוס • YB Apps");
+        guide.setText("📖 מדריך מלא לטיק דוס\n\n"+
+            "🏠 מסך הבית\n• הלוגו למעלה הוא הלוגו של האפליקציה.\n• ״הוסף תיקיות״ – בוחרים תיקייה מהמכשיר ואפשר להוסיף כמה.\n• ״פתח את הפיד״ – סורק את התיקיות ומציג תמונות וסרטונים.\n\n"+
+            "🎬 צפייה בפיד\n• החלקה למעלה – פריט הבא.\n• החלקה למטה – פריט קודם.\n• לחיצה – הפעלה או עצירה.\n• דאבל־טאפ במרכז – הפעלה/עצירה; בצדדים – קפיצה של 10 שניות.\n• לחיצה ארוכה – מהירות כפול 2.\n• בסיום סרטון עוברים לפריט הבא.\n• כפתור החזרה בפינה העליונה והשיתוף בפינה שממול.\n\n"+
+            "⚙️ הגדרות\n• הסתרת כפתורים – מסתירה את הפקדים אחרי 2 שניות.\n• דאבל־טאפ – מפעיל או מבטל את פעולות הדאבל־טאפ.\n• לחיצה ארוכה – מפעילה או מבטלת כפול 2.\n• נעילת כפול 2 – נועלת את המהירות בזמן לחיצה ארוכה.\n• הפעלה אוטומטית – קובעת אם סרטון חדש יתחיל מיד.\n• אנימציית מעבר – מעבר חלק בין פריטים.\n• גודל סרטון – שינוי זום עם תצוגה מקדימה חיה.\n\n"+
+            "🎨 צבעי האפליקציה\n• צבעים מהעיגולים משתנים מיד.\n• אפשר צבע מותאם אישית עם גוון ואטימות.\n• בצבעים בהירים, כולל לבן, הכיתוב הופך לשחור.\n• ״שמור וסגור״ שומר; ״ביטול״ מחזיר את הצבע הקודם.\n\n"+
+            "⏸️ יציאה מהאפליקציה\n• ביציאה הסרטון נעצר.\n• בחזרה לאפליקציה הוא לא ממשיך אוטומטית.\n\n"+
+            "📤 שיתוף\n• כפתור השיתוף משתף את הפריט שמוצג כרגע.\n\n"+
+            "ℹ️ אודות\nטיק דוס • YB Apps\n\nגרסה 01");
         scroll.addView(guide);
-        new AlertDialog.Builder(this).setTitle("📖 מדריך טיק דוס").setView(scroll).setPositiveButton("סגור",null).show();
+        new AlertDialog.Builder(this).setTitle("📖 מדריך טיק דוס • גרסה 01").setView(scroll).setPositiveButton("סגור",null).show();
     }
 
-    void showAbout(){new AlertDialog.Builder(this).setTitle("אודות").setMessage("טיק דוס\n\nYB Apps").setPositiveButton("סגור",null).show();}
+    void showAbout(){new AlertDialog.Builder(this).setTitle("אודות • גרסה 01").setMessage("טיק דוס\n\nYB Apps\n\nגרסה 01").setPositiveButton("סגור",null).show();}
     void toast(String s){Toast.makeText(this,s,Toast.LENGTH_SHORT).show();}
 
     @Override public void onSurfaceTextureAvailable(SurfaceTexture st,int w,int h){if(movie.getTag()!=null)prepareVideo((Uri)movie.getTag(),st);}
