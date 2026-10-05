@@ -12,6 +12,12 @@ android {
         }
     }
 
+    buildTypes {
+        debug {
+            signingConfig signingConfigs.tikdosUpdate
+        }
+    }
+
     namespace 'com.mabat.media'
     compileSdk 35
 
