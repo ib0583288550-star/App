@@ -91,7 +91,7 @@ public class MainActivity extends Activity implements TextureView.SurfaceTexture
 
     boolean handleTouch(MotionEvent e) {
         if(screenLocked && e.getAction()!=MotionEvent.ACTION_DOWN) return true;
-        if(e.getAction()==MotionEvent.ACTION_DOWN){ if(screenLocked)return true;downX=e.getX();downY=e.getY();downTime=System.currentTimeMillis();moved=false;longPressing=false;speedLocked=false;
+        if(e.getAction()==MotionEvent.ACTION_DOWN){ if(screenLocked)return true;downX=e.getX();downY=e.getY();downTime=System.currentTimeMillis();moved=false;longPressing=false;
             if(isVideo()&&prefs.getBoolean("longSpeed",true)){ longPressRunnable=()->{if(!moved&&isVideo()){longPressing=true;setSpeed(2f);}}; handler.postDelayed(longPressRunnable,320); } return true;}
         if(e.getAction()==MotionEvent.ACTION_MOVE){if(Math.abs(e.getX()-downX)>35||Math.abs(e.getY()-downY)>35)moved=true;
             if(longPressing&&prefs.getBoolean("speedLock",true)&&e.getY()-downY>90){speedLocked=true;speed.setText("כפול 2 • נעול");speed.setVisibility(View.VISIBLE);}return true;}
