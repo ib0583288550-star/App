@@ -30,7 +30,7 @@ public class MainActivity extends Activity implements TextureView.SurfaceTexture
     int pos = 0;
     float downX, downY;
     long downTime;
-    boolean moved = false, longPressing = false, doubleTapPending = false;
+    boolean moved = false, longPressing = false, doubleTapPending = false, lockGestureHandled = false;
     Handler handler = new Handler(Looper.getMainLooper());
     MediaPlayer player;
     SharedPreferences likes;
@@ -91,10 +91,10 @@ public class MainActivity extends Activity implements TextureView.SurfaceTexture
 
     boolean handleTouch(MotionEvent e) {
         if(screenLocked && e.getAction()!=MotionEvent.ACTION_DOWN) return true;
-        if(e.getAction()==MotionEvent.ACTION_DOWN){ if(screenLocked)return true;downX=e.getX();downY=e.getY();downTime=System.currentTimeMillis();moved=false;longPressing=false;
+        if(e.getAction()==MotionEvent.ACTION_DOWN){ if(screenLocked)return true;downX=e.getX();downY=e.getY();downTime=System.currentTimeMillis();moved=false;longPressing=false;lockGestureHandled=false;
             if(isVideo()&&prefs.getBoolean("longSpeed",true)){ longPressRunnable=()->{if(!moved&&isVideo()){longPressing=true;setSpeed(2f);}}; handler.postDelayed(longPressRunnable,320); } return true;}
         if(e.getAction()==MotionEvent.ACTION_MOVE){if(Math.abs(e.getX()-downX)>35||Math.abs(e.getY()-downY)>35)moved=true;
-            if(longPressing&&prefs.getBoolean("speedLock",true)&&e.getY()-downY>90){speedLocked=true;speed.setText("כפול 2 • נעול");speed.setVisibility(View.VISIBLE);}return true;}
+            if(longPressing&&prefs.getBoolean("speedLock",true)&&e.getY()-downY>90&&!lockGestureHandled){lockGestureHandled=true;speedLocked=!speedLocked;if(speedLocked){setSpeed(2f);speed.setText("כפול 2 • נעול");speed.setVisibility(View.VISIBLE);}else{setSpeed(1f);toast("נעילת כפול 2 בוטלה");}}return true;}
         if(e.getAction()==MotionEvent.ACTION_UP){if(longPressRunnable!=null){handler.removeCallbacks(longPressRunnable);longPressRunnable=null;}if(longPressing){if(!speedLocked)setSpeed(1f);longPressing=false;scheduleControlsHide();return true;}
             if(moved){float d=e.getY()-downY;if(Math.abs(d)>90){if(d<0)next();else prev();}return true;}
             if(System.currentTimeMillis()-downTime<300){if(doubleTapPending){doubleTapPending=false;
