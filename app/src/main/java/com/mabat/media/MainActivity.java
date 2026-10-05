@@ -22,7 +22,7 @@ public class MainActivity extends Activity implements TextureView.SurfaceTexture
     FrameLayout viewer;
     ImageView picture;
     TextureView movie;
-    TextView share, count, status, speed, timeText;
+    TextView share, count, status, speed, timeText, favorite;
     ImageView pauseIndicator;
     SeekBar seekBar;
     Runnable progressUpdater;
@@ -61,7 +61,7 @@ public class MainActivity extends Activity implements TextureView.SurfaceTexture
 
         home=findViewById(R.id.home); viewer=findViewById(R.id.viewer);
         picture=findViewById(R.id.picture); movie=findViewById(R.id.movie);
-        share=findViewById(R.id.share);
+        share=findViewById(R.id.share); favorite=findViewById(R.id.favorite);
         count=findViewById(R.id.count); status=findViewById(R.id.status); speed=findViewById(R.id.speed);
         pauseIndicator=findViewById(R.id.pauseIndicator);
         seekBar=findViewById(R.id.seekBar); timeText=findViewById(R.id.timeText);
@@ -78,7 +78,7 @@ public class MainActivity extends Activity implements TextureView.SurfaceTexture
         findViewById(R.id.settings).setOnClickListener(v->showSettings());
         findViewById(R.id.back).setOnClickListener(v->closeViewer());
         share.setOnClickListener(v->share());
-        TextView favView=findViewById(R.id.favorite); if(favView!=null) favView.setOnClickListener(v->toggleFavorite());
+        if(favorite!=null) favorite.setOnClickListener(v->toggleFavorite());\n        updateFavoriteIcon();
         TextView lockView=findViewById(R.id.lock); if(lockView!=null){ screenLocked=prefs.getBoolean("screenLock",false); lockView.setVisibility(prefs.getBoolean("showScreenLock",true)?View.VISIBLE:View.GONE); lockView.setText(screenLocked?"🔒":"🔓"); lockView.setOnClickListener(v->{screenLocked=!screenLocked;lockView.setText(screenLocked?"🔒":"🔓");toast(screenLocked?"המסך ננעל":"המסך שוחרר");}); }
         seekBar.setOnSeekBarChangeListener(new SeekBar.OnSeekBarChangeListener(){
             public void onProgressChanged(SeekBar b,int p,boolean fromUser){
@@ -451,7 +451,40 @@ public class MainActivity extends Activity implements TextureView.SurfaceTexture
 
     void saveFavorites(){StringBuilder b=new StringBuilder();for(Uri u:favorites){if(b.length()>0)b.append("\n");b.append(u);}likes.edit().putString("favorites",b.toString()).apply();}
     void loadFavorites(){String s=likes.getString("favorites","");if(!s.isEmpty())for(String x:s.split("\\n"))try{favorites.add(Uri.parse(x));}catch(Exception ignored){}}
-    void toggleFavorite(){if(items.isEmpty())return;Uri u=items.get(pos);if(favorites.contains(u)){favorites.remove(u);toast("הוסר מהמועדפים");}else{favorites.add(u);toast("נוסף למועדפים ⭐");}saveFavorites();}
+    void updateFavoriteIcon(){
+        if(favorite==null)return;
+        boolean on=!items.isEmpty() && favorites.contains(items.get(pos));
+        favorite.setText(on?"★":"☆");
+        favorite.setTextColor(on?0xFFFFD600:Color.WHITE);
+        favorite.setTextSize(28);
+    }
+    void animateFavoriteToCorner(){
+        if(favorite==null)return;
+        TextView flying=new TextView(this);
+        flying.setText("★");
+        flying.setTextColor(0xFFFFD600);
+        flying.setTextSize(46);
+        flying.setGravity(Gravity.CENTER);
+        FrameLayout.LayoutParams lp=new FrameLayout.LayoutParams(70,70,Gravity.CENTER);
+        viewer.addView(flying,lp);
+        float[] start={viewer.getWidth()/2f-35,viewer.getHeight()/2f-35};
+        float[] end={viewer.getWidth()-74f,76f};
+        flying.setTranslationX(start[0]); flying.setTranslationY(start[1]);
+        flying.setScaleX(1.0f); flying.setScaleY(1.0f); flying.setAlpha(1f);
+        flying.animate().translationX(end[0]).translationY(end[1]).scaleX(.45f).scaleY(.45f).alpha(.15f)
+            .setDuration(500).setInterpolator(new android.view.animation.AccelerateDecelerateInterpolator())
+            .withEndAction(()->{viewer.removeView(flying);updateFavoriteIcon();}).start();
+    }
+    void toggleFavorite(){
+        if(items.isEmpty())return;
+        Uri u=items.get(pos);
+        boolean adding=!favorites.contains(u);
+        if(adding)favorites.add(u);else favorites.remove(u);
+        saveFavorites();
+        updateFavoriteIcon();
+        if(adding) animateFavoriteToCorner();
+        else toast("הוסר מהמועדפים");
+    }
     void share(){if(items.isEmpty())return;Uri u=items.get(pos);String mime=getContentResolver().getType(u);Intent i=new Intent(Intent.ACTION_SEND);i.setType(mime!=null?mime:"*/*");i.putExtra(Intent.EXTRA_STREAM,u);i.addFlags(Intent.FLAG_GRANT_READ_URI_PERMISSION);startActivity(Intent.createChooser(i,"שיתוף"));}
 
     void showPauseIndicator(){if(pauseIndicator!=null)pauseIndicator.setVisibility(View.VISIBLE);}
@@ -517,7 +550,7 @@ public class MainActivity extends Activity implements TextureView.SurfaceTexture
             if(movie.isAvailable()) prepareVideo(u,movie.getSurfaceTexture());
             speed.setVisibility(View.GONE);
         } else picture.setImageURI(u);
-        count.setText((pos+1)+" / "+items.size());
+        count.setText((pos+1)+" / "+items.size());\n        updateFavoriteIcon();
     }
 
     void prepareVideo(Uri u,SurfaceTexture st){
