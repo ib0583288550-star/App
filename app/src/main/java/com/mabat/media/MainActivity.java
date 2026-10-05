@@ -120,7 +120,7 @@ public class MainActivity extends Activity implements TextureView.SurfaceTexture
             TextView sub=findViewById(R.id.homeSubtitle); if(sub!=null) sub.setTextSize(16*factor);
         }
         View action=findViewById(R.id.actionColumn);
-        if(action!=null && factor<1f) action.setScaleX(factor); action.setScaleY(factor);
+        if(action!=null && factor<1f){ action.setScaleX(factor); action.setScaleY(factor); }
     }
 
     void showOpeningAnimation(){
@@ -379,14 +379,13 @@ public class MainActivity extends Activity implements TextureView.SurfaceTexture
     void prepareVideo(Uri u,SurfaceTexture st){
         try{
             player=new MediaPlayer();
-            player.setPlaybackParams(new PlaybackParams().setSpeed(1f));
             player.setDataSource(this,u);
             Surface surface=new android.view.Surface(st);
             player.setSurface(surface);
             player.setLooping(false);
             player.setOnVideoSizeChangedListener((mp,w,h)->fitVideo(w,h));
             player.setOnCompletionListener(mp->{ if(!items.isEmpty()) next(); });
-            player.setOnPreparedListener(mp->{fitVideo(mp.getVideoWidth(),mp.getVideoHeight());
+            player.setOnPreparedListener(mp->{try{mp.setPlaybackParams(new PlaybackParams().setSpeed(1f));}catch(Exception ignored){} fitVideo(mp.getVideoWidth(),mp.getVideoHeight());
                 boolean startNow=prefs.getBoolean("autoPlay",true) && !returningFromBackground;
                 if(startNow) mp.start(); else {try{mp.pause();}catch(Exception ignored){}}
                 returningFromBackground=false;updateTime();startProgressUpdater();if(mp.isPlaying())scheduleControlsHide();});
