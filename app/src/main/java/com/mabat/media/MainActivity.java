@@ -40,8 +40,8 @@ public class MainActivity extends Activity implements TextureView.SurfaceTexture
     AlertDialog colorDialog;
     Runnable longPressRunnable;
     boolean returningFromBackground=false;
-    boolean shuffleMode=false;
     ArrayList<Uri> favorites=new ArrayList<>();
+    boolean screenLocked=false;
 
     @Override public void onCreate(Bundle b) {
         super.onCreate(b);
@@ -330,7 +330,7 @@ public class MainActivity extends Activity implements TextureView.SurfaceTexture
             runOnUiThread(()->{
                 items.clear();items.addAll(result);scanning=false;
                 if(items.isEmpty()){status.setText("לא נמצאה מדיה בתיקיות שנבחרו");toast("לא נמצאה מדיה בתיקיות שנבחרו");return;}
-                status.setText("נמצאו "+items.size()+" פריטי מדיה. אפשר להתחיל לצפות.");pos=0;openViewer();
+                status.setText("נמצאו "+items.size()+" פריטי מדיה. אפשר להתחיל לצפות.");pos=findLastPosition();openViewer();
             });
         }).start();
     }
@@ -350,8 +350,18 @@ public class MainActivity extends Activity implements TextureView.SurfaceTexture
         }catch(Exception ignored){}
     }
 
+    int findLastPosition(){
+        String last=prefs.getString("lastItem","");
+        if(last.isEmpty()) return 0;
+        for(int i=0;i<items.size();i++) if(items.get(i).toString().equals(last)) return i;
+        return 0;
+    }
+    void saveLastPosition(){
+        if(!items.isEmpty() && pos>=0 && pos<items.size())
+            prefs.edit().putString("lastItem",items.get(pos).toString()).apply();
+    }
     void openViewer(){home.setVisibility(View.GONE);viewer.setVisibility(View.VISIBLE);render();}
-    void closeViewer(){releasePlayer();viewer.setVisibility(View.GONE);home.setVisibility(View.VISIBLE);}
+    void closeViewer(){saveLastPosition();releasePlayer();viewer.setVisibility(View.GONE);home.setVisibility(View.VISIBLE);}
 
     void render(){
         if(items.isEmpty())return;
@@ -496,7 +506,7 @@ public class MainActivity extends Activity implements TextureView.SurfaceTexture
     @Override public boolean onSurfaceTextureDestroyed(SurfaceTexture st){releasePlayer();return true;}
     @Override public void onSurfaceTextureUpdated(SurfaceTexture st){}
     @Override protected void onPause(){
-        super.onPause();speedLocked=false;returningFromBackground=true;
+        super.onPause();saveLastPosition();speedLocked=false;returningFromBackground=true;
         if(player!=null){try{player.pause();}catch(Exception ignored){}}
         hidePauseIndicator();
     }
