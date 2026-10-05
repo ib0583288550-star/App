@@ -21,10 +21,6 @@ jobs:
         uses: gradle/actions/setup-gradle@v4
         with:
           gradle-version: "8.7"
-      - name: Prepare stable Tik Dos signing key
-        run: |
-          mkdir -p signing
-          base64 -d signing/tikdos-update.jks.b64 > signing/tikdos-update.jks
       - name: Build direct Tik Dos APK
         run: gradle assembleDebug --stacktrace
       - name: Upload direct APK
