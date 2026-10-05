@@ -36,13 +36,15 @@ public class MainActivity extends Activity implements TextureView.SurfaceTexture
     SharedPreferences likes;
     boolean scanning = false;
     boolean speedLocked=false;
-    SharedPreferences prefs;\n    AlertDialog colorDialog;
+    SharedPreferences prefs;
+    AlertDialog colorDialog;
     Runnable longPressRunnable;
     boolean returningFromBackground=false;
 
     @Override public void onCreate(Bundle b) {
         super.onCreate(b);
-        getWindow().setFlags(WindowManager.LayoutParams.FLAG_FULLSCREEN, WindowManager.LayoutParams.FLAG_FULLSCREEN);\n        getWindow().addFlags(WindowManager.LayoutParams.FLAG_KEEP_SCREEN_ON);
+        getWindow().setFlags(WindowManager.LayoutParams.FLAG_FULLSCREEN, WindowManager.LayoutParams.FLAG_FULLSCREEN);
+        getWindow().addFlags(WindowManager.LayoutParams.FLAG_KEEP_SCREEN_ON);
         getWindow().getDecorView().setSystemUiVisibility(
             View.SYSTEM_UI_FLAG_FULLSCREEN | View.SYSTEM_UI_FLAG_HIDE_NAVIGATION |
             View.SYSTEM_UI_FLAG_IMMERSIVE_STICKY | View.SYSTEM_UI_FLAG_LAYOUT_FULLSCREEN |
