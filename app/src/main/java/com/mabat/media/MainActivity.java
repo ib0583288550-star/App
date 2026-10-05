@@ -176,7 +176,7 @@ public class MainActivity extends Activity implements TextureView.SurfaceTexture
         Button hideDelay=new Button(this);hideDelay.setText("זמן הסתרת כפתורים: "+prefs.getInt("hideDelay",2)+" שניות");hideDelay.setAllCaps(false);hideDelay.setOnClickListener(v->{String[] opts={"1 שנייה","2 שניות","3 שניות","4 שניות","5 שניות"};new AlertDialog.Builder(this).setTitle("אחרי כמה זמן להסתיר?").setSingleChoiceItems(opts,prefs.getInt("hideDelay",2)-1,(d,w)->{prefs.edit().putInt("hideDelay",w+1).apply();hideDelay.setText("זמן הסתרת כפתורים: "+(w+1)+" שניות");d.dismiss();}).show();});
         box.addView(a);box.addView(hideDelay);box.addView(g);box.addView(sp);box.addView(l);box.addView(ap);box.addView(tr);box.addView(sl);box.addView(sb);box.addView(zoom);box.addView(colors);box.addView(guideBtn);box.addView(aboutBtn);
         new AlertDialog.Builder(this).setTitle("⚙ הגדרות טיק דוס").setView(box)
-            .setPositiveButton("שמור",(d,w)->prefs.edit().putBoolean("autoHide",a.isChecked()).putBoolean("gestureDoubleTap",g.isChecked()).putBoolean("longSpeed",sp.isChecked()).putBoolean("speedLock",l.isChecked()).putBoolean("autoPlay",ap.isChecked()).putBoolean("transitionAnim",tr.isChecked()).putBoolean("showScreenLock",sl.isChecked()).putBoolean("showSeekBar",sb.isChecked()).apply());
+            .setPositiveButton("שמור",(d,w)->prefs.edit().putBoolean("autoHide",a.isChecked()).putBoolean("gestureDoubleTap",g.isChecked()).putBoolean("longSpeed",sp.isChecked()).putBoolean("speedLock",l.isChecked()).putBoolean("autoPlay",ap.isChecked()).putBoolean("transitionAnim",tr.isChecked()).putBoolean("showScreenLock",sl.isChecked()).putBoolean("showSeekBar",sb.isChecked()).apply())
             .setNegativeButton("ביטול",null).show();
     }
 
@@ -451,8 +451,8 @@ public class MainActivity extends Activity implements TextureView.SurfaceTexture
         TextView guide=makeInfoText(
             "📖 מדריך מלא לטיק דוס\n\n"+
             "🏠 מסך הבית\n• הלוגו למעלה הוא הלוגו של האפליקציה.\n• ״הוסף תיקיות״ – בוחרים תיקייה מהמכשיר ואפשר להוסיף כמה.\n• ״פתח את הפיד״ – סורק את התיקיות ומציג תמונות וסרטונים.\n\n"+
-            "🎬 צפייה בפיד\n• החלקה למעלה – פריט הבא.\n• החלקה למטה – פריט קודם.\n• לחיצה – הפעלה או עצירה.\n• דאבל־טאפ במרכז – הפעלה/עצירה; בצדדים – קפיצה של 10 שניות.\n• לחיצה ארוכה – מהירות כפול 2.\n• כפתור החזרה בפינה העליונה והשיתוף בפינה שממול.\n• כשהפקדים מוסתרים, אפשר לגעת באזור התחתון שבו נמצא פס הזמן כדי לחשוף אותו זמנית, להחליק למיקום הרצוי, וכשעוזבים הוא נעלם שוב אם הוא מוגדר כמוסתר.\n\n"+
-            "⚙️ הגדרות\n• הסתרת כפתורים – אפשר להפעיל או לבטל הסתרה אוטומטית.\n• זמן הסתרת כפתורים – אפשר לבחור 1, 2, 3, 4 או 5 שניות.\n• פס זמן הסרטון – אפשר להציג או להסתיר את הסליידר. גם כשהוא מוסתר, אפשר לגעת באזור התחתון שלו כדי לחשוף אותו זמנית ולבחור זמן.\n• דאבל־טאפ – מפעיל או מבטל את פעולות הדאבל־טאפ.\n• לחיצה ארוכה – מפעילה או מבטלת כפול 2.\n• נעילת כפול 2 – לחיצה ארוכה והחלקה למטה נועלת; אותה מחווה שוב מבטלת את הנעילה.\n• נעילת מסך – אפשר לבחור אם אייקון הנעילה יוצג בנגן.\n• הפעלה אוטומטית – קובעת אם סרטון חדש יתחיל מיד.\n• אנימציית מעבר – מעבר חלק בין פריטים.\n• גודל סרטון – שינוי זום עם תצוגה מקדימה חיה.\n\n"+
+            "🎬 צפייה בפיד\n• החלקה למעלה – פריט הבא.\n• החלקה למטה – פריט קודם.\n• לחיצה – הפעלה או עצירה.\n• דאבל־טאפ במרכז – הפעלה/עצירה; בצדדים – קפיצה של 10 שניות.\n• לחיצה ארוכה – מהירות כפול 2.\n• כפתור החזרה מציג רק את החץ; כפתור השיתוף נמצא בפינה שממול.\n• כשהפקדים מוסתרים, אפשר לגעת באזור התחתון שבו נמצא פס הזמן כדי לחשוף אותו זמנית, להחליק למיקום הרצוי, וכשעוזבים הוא נעלם שוב אם הוא מוגדר כמוסתר.\n\n"+
+            "⚙️ הגדרות\n• הסתרת כפתורים – אפשר להפעיל או לבטל הסתרה אוטומטית.\n• זמן הסתרת כפתורים – אפשר לבחור 1, 2, 3, 4 או 5 שניות. כשהכפתורים נעלמים, אזור פס הזמן עדיין ניתן להחלקה.\n• פס זמן הסרטון – אפשר להציג או להסתיר את הסליידר. כשהוא מוסתר, נוגעים או מחליקים בדיוק באזור התחתון שבו הוא אמור להיות: הסליידר מתגלה, אפשר לגרור אותו לזמן הרצוי, וברגע שמשחררים הוא נעלם שוב.\n• דאבל־טאפ – מפעיל או מבטל את פעולות הדאבל־טאפ.\n• לחיצה ארוכה – מפעילה או מבטלת כפול 2. היציאה מהאפליקציה והחזרה אליה מאפסות את מהירות ההפעלה ל־1×.\n• נעילת כפול 2 – לחיצה ארוכה והחלקה למטה נועלת; אותה מחווה שוב מבטלת את הנעילה.\n• נעילת מסך – אפשר לבחור אם אייקון הנעילה יוצג בנגן. אפשר גם לנעול ולשחרר את המסך דרך האייקון.\n• הפעלה אוטומטית – קובעת אם סרטון חדש יתחיל מיד.\n• אנימציית מעבר – מעבר חלק בין פריטים.\n• גודל סרטון – שינוי זום עם תצוגה מקדימה חיה.\n\n"+
             "🎨 צבעי האפליקציה\n• צבעים מהעיגולים משתנים מיד.\n• אפשר צבע מותאם אישית עם גוון ואטימות.\n• בצבעים בהירים, כולל לבן, הכיתוב הופך לשחור.\n• ״שמור וסגור״ שומר; ״ביטול״ מחזיר את הצבע הקודם.\n\n"+
             "⏸️ יציאה מהאפליקציה\n• ביציאה הסרטון נעצר.\n• בחזרה לאפליקציה הוא לא ממשיך אוטומטית.\n\n"+
             "📤 שיתוף\n• כפתור השיתוף משתף את הפריט שמוצג כרגע.\n\n"+
@@ -514,11 +514,12 @@ public class MainActivity extends Activity implements TextureView.SurfaceTexture
     @Override public void onSurfaceTextureUpdated(SurfaceTexture st){}
     @Override protected void onPause(){
         super.onPause();saveLastPosition();speedLocked=false;returningFromBackground=true;
-        if(player!=null){try{player.pause();}catch(Exception ignored){}}
+        if(player!=null){try{player.setPlaybackParams(new PlaybackParams().setSpeed(1f));}catch(Exception ignored){}try{player.pause();}catch(Exception ignored){}}
         hidePauseIndicator();
     }
     @Override protected void onResume(){
         super.onResume();speedLocked=false;
+        if(player!=null){try{player.setPlaybackParams(new PlaybackParams().setSpeed(1f));}catch(Exception ignored){}}
         // Always return paused. There is intentionally no auto-resume option.
         if(player!=null && player.isPlaying()){try{player.pause();}catch(Exception ignored){}}
         hidePauseIndicator();
