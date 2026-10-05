@@ -78,7 +78,8 @@ public class MainActivity extends Activity implements TextureView.SurfaceTexture
         findViewById(R.id.settings).setOnClickListener(v->showSettings());
         findViewById(R.id.back).setOnClickListener(v->closeViewer());
         share.setOnClickListener(v->share());
-        if(favorite!=null) favorite.setOnClickListener(v->toggleFavorite());\n        updateFavoriteIcon();
+        if(favorite!=null) favorite.setOnClickListener(v->toggleFavorite());
+        updateFavoriteIcon();
         TextView lockView=findViewById(R.id.lock); if(lockView!=null){ screenLocked=prefs.getBoolean("screenLock",false); lockView.setVisibility(prefs.getBoolean("showScreenLock",true)?View.VISIBLE:View.GONE); lockView.setText(screenLocked?"🔒":"🔓"); lockView.setOnClickListener(v->{screenLocked=!screenLocked;lockView.setText(screenLocked?"🔒":"🔓");toast(screenLocked?"המסך ננעל":"המסך שוחרר");}); }
         seekBar.setOnSeekBarChangeListener(new SeekBar.OnSeekBarChangeListener(){
             public void onProgressChanged(SeekBar b,int p,boolean fromUser){
@@ -571,7 +572,8 @@ public class MainActivity extends Activity implements TextureView.SurfaceTexture
             if(movie.isAvailable()) prepareVideo(u,movie.getSurfaceTexture());
             speed.setVisibility(View.GONE);
         } else picture.setImageURI(u);
-        count.setText((pos+1)+" / "+items.size());\n        updateFavoriteIcon();
+        count.setText((pos+1)+" / "+items.size());
+        updateFavoriteIcon();
     }
 
     void prepareVideo(Uri u,SurfaceTexture st){
