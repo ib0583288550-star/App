@@ -75,7 +75,7 @@ public class MainActivity extends Activity implements TextureView.SurfaceTexture
         findViewById(R.id.back).setOnClickListener(v->closeViewer());
         share.setOnClickListener(v->share());
         TextView favView=findViewById(R.id.favorite); if(favView!=null) favView.setOnClickListener(v->toggleFavorite());
-        TextView lockView=findViewById(R.id.lock); if(lockView!=null){ screenLocked=prefs.getBoolean("screenLock",false); lockView.setVisibility(prefs.getBoolean("showScreenLock",true)?View.VISIBLE:View.GONE); lockView.setOnClickListener(v->{screenLocked=!screenLocked;lockView.setText(screenLocked?"🔓":"🔒");toast(screenLocked?"המסך ננעל":"המסך שוחרר");}); }
+        TextView lockView=findViewById(R.id.lock); if(lockView!=null){ screenLocked=prefs.getBoolean("screenLock",false); lockView.setVisibility(prefs.getBoolean("showScreenLock",true)?View.VISIBLE:View.GONE); lockView.setText(screenLocked?"🔒":"🔓"); lockView.setOnClickListener(v->{screenLocked=!screenLocked;lockView.setText(screenLocked?"🔒":"🔓");toast(screenLocked?"המסך ננעל":"המסך שוחרר");}); }
         seekBar.setOnSeekBarChangeListener(new SeekBar.OnSeekBarChangeListener(){
             public void onProgressChanged(SeekBar b,int p,boolean fromUser){
                 if(fromUser && player!=null && player.getDuration()>0) player.seekTo((int)((long)p*player.getDuration()/1000L));
@@ -145,8 +145,8 @@ public class MainActivity extends Activity implements TextureView.SurfaceTexture
         root.addView(splash,new ViewGroup.LayoutParams(-1,-1));
         splash.setAlpha(0f);
         splash.setScaleX(.92f); splash.setScaleY(.92f);
-        splash.animate().alpha(1f).scaleX(1f).scaleY(1f).setDuration(420).setInterpolator(new AccelerateDecelerateInterpolator()).withEndAction(()->{
-            splash.animate().alpha(0f).scaleX(1.06f).scaleY(1.06f).setStartDelay(420).setDuration(380).setInterpolator(new AccelerateDecelerateInterpolator()).withEndAction(()->root.removeView(splash)).start();
+        splash.animate().alpha(1f).scaleX(1f).scaleY(1f).setDuration(900).setInterpolator(new AccelerateDecelerateInterpolator()).withEndAction(()->{
+            splash.animate().alpha(0f).scaleX(1.06f).scaleY(1.06f).setStartDelay(1000).setDuration(900).setInterpolator(new AccelerateDecelerateInterpolator()).withEndAction(()->root.removeView(splash)).start();
         }).start();
     }
 
@@ -450,7 +450,7 @@ public class MainActivity extends Activity implements TextureView.SurfaceTexture
         );
         scroll.addView(guide);
         AlertDialog dlg=new AlertDialog.Builder(this)
-            .setTitle("📖 מדריך טיק דוס • גרסה 01")
+            .setTitle("📖 מדריך טיק דוס • גרסה 1.6")
             .setView(scroll)
             .setPositiveButton("סגור",null).create();
         dlg.setOnShowListener(v->{dlg.getButton(AlertDialog.BUTTON_POSITIVE).setTextColor(0xFFB9A7FF);});
@@ -482,7 +482,7 @@ public class MainActivity extends Activity implements TextureView.SurfaceTexture
         company.setTextColor(0xFFB9A7FF);
         box.addView(company);
 
-        TextView version=makeInfoText("גרסה 01");
+        TextView version=makeInfoText("גרסה 1.6");
         version.setGravity(Gravity.CENTER);
         version.setTextSize(13);
         version.setTextColor(0xFF9696A8);
