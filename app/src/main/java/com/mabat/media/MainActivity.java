@@ -40,6 +40,7 @@ public class MainActivity extends Activity implements TextureView.SurfaceTexture
     AlertDialog colorDialog;
     Runnable longPressRunnable;
     boolean returningFromBackground=false;
+    boolean lockZoneCandidate=false;
     ArrayList<Uri> favorites=new ArrayList<>();
     boolean screenLocked=false;
     android.animation.ObjectAnimator speedAnimator;
@@ -93,10 +94,10 @@ public class MainActivity extends Activity implements TextureView.SurfaceTexture
 
     boolean handleTouch(MotionEvent e) {
         if(screenLocked && e.getAction()!=MotionEvent.ACTION_DOWN) return true;
-        if(e.getAction()==MotionEvent.ACTION_DOWN){ if(screenLocked)return true;downX=e.getX();downY=e.getY();downTime=System.currentTimeMillis();moved=false;longPressing=false;lockGestureHandled=false;hiddenSeekDragging=(seekBar.getVisibility()!=View.VISIBLE&&player!=null&&player.getDuration()>0);
+        if(e.getAction()==MotionEvent.ACTION_DOWN){ if(screenLocked)return true;downX=e.getX();downY=e.getY();downTime=System.currentTimeMillis();moved=false;longPressing=false;lockGestureHandled=false;lockZoneCandidate=e.getY()>=viewer.getHeight()*0.72f;hiddenSeekDragging=(seekBar.getVisibility()!=View.VISIBLE&&player!=null&&player.getDuration()>0);
             if(isVideo()&&prefs.getBoolean("longSpeed",true)){ longPressRunnable=()->{if(!moved&&isVideo()){longPressing=true;if(!speedLocked)setSpeed(2f);}}; handler.postDelayed(longPressRunnable,600); } return true;}
         if(e.getAction()==MotionEvent.ACTION_MOVE){if(hiddenSeekDragging&&player!=null&&player.getDuration()>0&&Math.abs(e.getX()-downX)>10&&Math.abs(e.getX()-downX)>=Math.abs(e.getY()-downY)){if(longPressRunnable!=null){handler.removeCallbacks(longPressRunnable);longPressRunnable=null;}longPressing=false;moved=true;int w=Math.max(1,viewer.getWidth());int p=(int)(Math.max(0,Math.min(w,e.getX()))*1000f/w);player.seekTo((int)((long)p*player.getDuration()/1000L));updateTime();return true;}if(Math.abs(e.getX()-downX)>35||Math.abs(e.getY()-downY)>35)moved=true;
-            if(longPressing&&prefs.getBoolean("speedLock",true)&&e.getY()-downY>90&&!lockGestureHandled){lockGestureHandled=true;speedLocked=!speedLocked;if(speedLocked){setSpeed(2f);}else{setSpeed(1f);toast("נעילת כפול 2 בוטלה");}longPressing=false;moved=true;}return true;}
+            if(longPressing&&lockZoneCandidate&&prefs.getBoolean("speedLock",true)&&e.getY()-downY>70&&!lockGestureHandled){lockGestureHandled=true;speedLocked=!speedLocked;if(speedLocked){setSpeed(2f);}else{setSpeed(1f);toast("נעילת כפול 2 בוטלה");}longPressing=false;moved=true;}return true;}
         if(e.getAction()==MotionEvent.ACTION_UP){if(lockGestureHandled){if(longPressRunnable!=null){handler.removeCallbacks(longPressRunnable);longPressRunnable=null;}longPressing=false;return true;}if(hiddenSeekDragging){hiddenSeekDragging=false;if(!prefs.getBoolean("showSeekBar",true))seekBar.setVisibility(View.GONE);return true;}if(longPressRunnable!=null){handler.removeCallbacks(longPressRunnable);longPressRunnable=null;}if(longPressing){if(!speedLocked)setSpeed(1f);longPressing=false;scheduleControlsHide();return true;}
             if(moved){float d=e.getY()-downY;if(Math.abs(d)>90){if(d<0)next();else prev();}return true;}
             if(System.currentTimeMillis()-downTime<300){setControlsVisible(true);scheduleControlsHide();if(doubleTapPending){doubleTapPending=false;
@@ -382,7 +383,7 @@ public class MainActivity extends Activity implements TextureView.SurfaceTexture
             prefs.edit().putString("lastItem",items.get(pos).toString()).apply();
     }
     void openViewer(){home.setVisibility(View.GONE);viewer.setVisibility(View.VISIBLE);render();}
-    void closeViewer(){saveLastPosition();releasePlayer();viewer.setVisibility(View.GONE);home.setVisibility(View.VISIBLE);}
+    void closeViewer(){saveLastPosition();returningFromBackground=false;releasePlayer();viewer.setVisibility(View.GONE);home.setVisibility(View.VISIBLE);}
 
     void render(){
         if(items.isEmpty())return;
@@ -527,14 +528,16 @@ public class MainActivity extends Activity implements TextureView.SurfaceTexture
     @Override public void onSurfaceTextureUpdated(SurfaceTexture st){}
     @Override protected void onPause(){
         super.onPause();saveLastPosition();speedLocked=false;returningFromBackground=true;
-        if(player!=null){try{player.setPlaybackParams(new PlaybackParams().setSpeed(1f));}catch(Exception ignored){}try{player.pause();}catch(Exception ignored){}}
+        if(player!=null){try{player.pause();}catch(Exception ignored){}try{player.setPlaybackParams(new PlaybackParams().setSpeed(1f));}catch(Exception ignored){}}
         hidePauseIndicator();
     }
+    @Override protected void onStop(){
+        super.onStop();
+        if(player!=null){try{player.pause();}catch(Exception ignored){}try{player.setPlaybackParams(new PlaybackParams().setSpeed(1f));}catch(Exception ignored){}}
+    }
     @Override protected void onResume(){
-        super.onResume();speedLocked=false;
-        if(player!=null){try{player.setPlaybackParams(new PlaybackParams().setSpeed(1f));}catch(Exception ignored){}}
-        // Always return paused. There is intentionally no auto-resume option.
-        if(player!=null && player.isPlaying()){try{player.pause();}catch(Exception ignored){}}
+        super.onResume();speedLocked=false;returningFromBackground=true;
+        if(player!=null){try{player.setPlaybackParams(new PlaybackParams().setSpeed(1f));}catch(Exception ignored){}try{player.pause();}catch(Exception ignored){}}
         hidePauseIndicator();
     }
 }
