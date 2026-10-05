@@ -107,12 +107,6 @@ public class MainActivity extends Activity implements TextureView.SurfaceTexture
             lockZoneCandidate=e.getX()<=w*0.30f || e.getX()>=w*0.70f;
             hiddenSeekDragging=(seekBar.getVisibility()!=View.VISIBLE&&player!=null&&player.getDuration()>0&&e.getY()>=viewer.getHeight()*0.82f);
 
-            // Every normal touch pauses immediately.
-            if(player!=null && player.isPlaying()){
-                try{player.pause();}catch(Exception ignored){}
-                showPauseIndicator();
-            }
-
             // Long-press x2 exists ONLY on the left/right sides.
             if(isVideo() && prefs.getBoolean("longSpeed",true) && lockZoneCandidate){
                 longPressRunnable=()->{
@@ -190,8 +184,9 @@ public class MainActivity extends Activity implements TextureView.SurfaceTexture
             if(longPressing){
                 if(!speedLocked){
                     setSpeed(1f);
-                    try{player.pause();}catch(Exception ignored){}
-                    showPauseIndicator();
+                    if(player!=null && !player.isPlaying()){
+                        try{player.start();}catch(Exception ignored){}
+                    }
                 }
                 longPressing=false;
                 scheduleControlsHide();
@@ -206,8 +201,8 @@ public class MainActivity extends Activity implements TextureView.SurfaceTexture
                 return true;
             }
 
-            // Middle-screen double tap = favorite. Single middle tap only opens controls
-            // and leaves the video paused; it does not trigger any other action.
+            // Middle-screen double tap = favorite. A single tap only shows controls;
+            // it never pauses or resumes the video.
             float w=Math.max(1,viewer.getWidth());
             boolean middle=downX>w*0.30f && downX<w*0.70f;
             long now=System.currentTimeMillis();
