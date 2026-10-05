@@ -3,6 +3,15 @@ plugins {
 }
 
 android {
+    signingConfigs {
+        tikdosUpdate {
+            storeFile file("$rootDir/signing/tikdos-update.jks")
+            storePassword "tikdosupdate"
+            keyAlias "tikdos"
+            keyPassword "tikdosupdate"
+        }
+    }
+
     namespace 'com.mabat.media'
     compileSdk 35
 
@@ -30,6 +39,7 @@ android {
             dimension "mode"
             applicationId 'com.mabat.media'
             versionName '1.9'
+            signingConfig signingConfigs.tikdosUpdate
         }
     }
 }
