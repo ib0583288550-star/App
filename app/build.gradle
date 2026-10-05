@@ -29,6 +29,7 @@ android {
         tikdosTemplate {
             dimension "mode"
             applicationId 'com.mabat.media'
+            versionName '1.6'
         }
     }
 }
