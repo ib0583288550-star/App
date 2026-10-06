@@ -506,17 +506,36 @@ public class MainActivity extends Activity implements TextureView.SurfaceTexture
                 row.setGravity(Gravity.CENTER_VERTICAL);
                 row.setPadding(8,8,8,8);
 
+                ImageView thumb=new ImageView(this);
+                thumb.setScaleType(ImageView.ScaleType.CENTER_CROP);
+                thumb.setBackgroundColor(0xFF25252E);
+                thumb.setContentDescription("תצוגה מקדימה");
+                thumb.setImageURI(u);
+                if(isVideoUri(u)){
+                    try{
+                        MediaMetadataRetriever mmr=new MediaMetadataRetriever();
+                        mmr.setDataSource(this,u);
+                        Bitmap frame=mmr.getFrameAtTime(0,MediaMetadataRetriever.OPTION_CLOSEST_SYNC);
+                        if(frame!=null)thumb.setImageBitmap(frame);
+                        mmr.release();
+                    }catch(Exception ignored){}
+                }
+                LinearLayout.LayoutParams thumbLp=new LinearLayout.LayoutParams(92,64);
+                thumbLp.setMargins(4,0,12,0);
+                row.addView(thumb,thumbLp);
+
                 TextView name=makeInfoText(getFavoriteName(u));
                 name.setTextSize(15);
                 name.setGravity(Gravity.RIGHT|Gravity.CENTER_VERTICAL);
                 name.setSingleLine(true);
-                row.addView(name,new LinearLayout.LayoutParams(0,56,1));
+                row.addView(name,new LinearLayout.LayoutParams(0,64,1));
 
-                Button delete=new Button(this);
-                delete.setText("🗑️");
-                delete.setTextSize(20);
+                ImageButton delete=new ImageButton(this);
+                delete.setImageResource(android.R.drawable.ic_menu_delete);
+                delete.setScaleType(ImageView.ScaleType.CENTER);
+                delete.setBackgroundColor(Color.TRANSPARENT);
+                delete.setPadding(10,10,10,10);
                 delete.setContentDescription("מחק מהמועדפים");
-                delete.setAllCaps(false);
                 delete.setOnClickListener(v->{
                     favorites.remove(u);
                     saveFavorites();
@@ -528,7 +547,7 @@ public class MainActivity extends Activity implements TextureView.SurfaceTexture
                         showFavoritesList();
                     }
                 });
-                row.addView(delete,new LinearLayout.LayoutParams(64,56));
+                row.addView(delete,new LinearLayout.LayoutParams(56,64));
 
                 row.setOnClickListener(v->{
                     ArrayList<Uri> favItems=new ArrayList<>(favorites);
