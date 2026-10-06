@@ -677,6 +677,7 @@ public class MainActivity extends Activity implements TextureView.SurfaceTexture
 
     void render(){
         if(items.isEmpty())return;
+        hidePauseIndicator();
         releasePlayer();
         if(prefs.getBoolean("transitionAnim",true)) viewer.setAlpha(0.92f); else viewer.setAlpha(1f);
         viewer.setTranslationY(18f);
