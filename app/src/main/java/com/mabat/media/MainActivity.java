@@ -84,7 +84,7 @@ public class MainActivity extends Activity implements TextureView.SurfaceTexture
         share.setOnClickListener(v->share());
         if(favorite!=null) favorite.setOnClickListener(v->toggleFavorite());
         updateFavoriteIcon();
-        TextView lockView=findViewById(R.id.lock); if(lockView!=null){ screenLocked=prefs.getBoolean("screenLock",false); lockView.setVisibility(prefs.getBoolean("showScreenLock",true)?View.VISIBLE:View.GONE); lockView.setText(screenLocked?"🔒":"🔓"); lockView.setOnClickListener(v->{screenLocked=!screenLocked;lockView.setText(screenLocked?"🔒":"🔓");toast(screenLocked?"המסך ננעל":"המסך שוחרר");}); }
+        TextView lockView=findViewById(R.id.lock); if(lockView!=null){ lockView.setText("🗑️"); lockView.setVisibility(View.VISIBLE); lockView.setContentDescription("מחק מהמועדפים"); lockView.setOnClickListener(v->{ if(!items.isEmpty()){ Uri u=items.get(pos); if(favorites.contains(u)){ favorites.remove(u); saveFavorites(); updateFavoriteIcon(); toast("הוסר מהמועדפים"); } else { toast("הפריט לא נמצא במועדפים"); } } }); }
         seekBar.setOnSeekBarChangeListener(new SeekBar.OnSeekBarChangeListener(){
             public void onProgressChanged(SeekBar b,int p,boolean fromUser){
                 if(fromUser && player!=null && player.getDuration()>0) player.seekTo((int)((long)p*player.getDuration()/1000L));
@@ -322,7 +322,7 @@ public class MainActivity extends Activity implements TextureView.SurfaceTexture
         CheckBox tr=new CheckBox(this);tr.setText("אנימציית מעבר בין סרטונים");tr.setChecked(prefs.getBoolean("transitionAnim",true));
         CheckBox sl=new CheckBox(this);sl.setText("הצג נעילת מסך בנגן");sl.setChecked(prefs.getBoolean("showScreenLock",true));
         CheckBox sb=new CheckBox(this);sb.setText("הצג פס זמן הסרטון");sb.setChecked(prefs.getBoolean("showSeekBar",true));
-        Button fav=new Button(this);fav.setText("⭐ מועדפים");fav.setAllCaps(false);fav.setOnClickListener(v->{if(favorites.isEmpty()){toast("אין מועדפים עדיין");return;}items.clear();items.addAll(favorites);pos=0;openViewer();});box.addView(fav);Button colors=new Button(this);colors.setText("🎨 צבעי האפליקציה");colors.setOnClickListener(v->showColorSettings());
+        Button fav=new Button(this);fav.setText("⭐ מועדפים");fav.setAllCaps(false);fav.setOnClickListener(v->showFavoritesList());box.addView(fav);Button colors=new Button(this);colors.setText("🎨 צבעי האפליקציה");colors.setOnClickListener(v->showColorSettings());
         Button guideBtn=new Button(this);guideBtn.setText("📖 מדריך והוראות");guideBtn.setAllCaps(false);guideBtn.setOnClickListener(v->showGuide());
         Button aboutBtn=new Button(this);aboutBtn.setText("ℹ️ אודות");aboutBtn.setAllCaps(false);aboutBtn.setOnClickListener(v->showAbout());
         Button hideDelay=new Button(this);hideDelay.setText("זמן הסתרת כפתורים: "+prefs.getInt("hideDelay",2)+" שניות");hideDelay.setAllCaps(false);hideDelay.setOnClickListener(v->{String[] opts={"1 שנייה","2 שניות","3 שניות","4 שניות","5 שניות"};new AlertDialog.Builder(this).setTitle("אחרי כמה זמן להסתיר?").setSingleChoiceItems(opts,prefs.getInt("hideDelay",2)-1,(d,w)->{prefs.edit().putInt("hideDelay",w+1).apply();hideDelay.setText("זמן הסתרת כפתורים: "+(w+1)+" שניות");d.dismiss();}).show();});
@@ -489,6 +489,84 @@ public class MainActivity extends Activity implements TextureView.SurfaceTexture
 
     void saveFavorites(){StringBuilder b=new StringBuilder();for(Uri u:favorites){if(b.length()>0)b.append("\n");b.append(u);}likes.edit().putString("favorites",b.toString()).apply();}
     void loadFavorites(){String s=likes.getString("favorites","");if(!s.isEmpty())for(String x:s.split("\\n"))try{favorites.add(Uri.parse(x));}catch(Exception ignored){}}
+    void showFavoritesList(){
+        LinearLayout list=new LinearLayout(this);
+        list.setOrientation(LinearLayout.VERTICAL);
+        list.setPadding(12,8,12,8);
+        if(favorites.isEmpty()){
+            TextView empty=makeInfoText("אין מועדפים עדיין");
+            empty.setGravity(Gravity.CENTER);
+            list.addView(empty,new LinearLayout.LayoutParams(-1,120));
+        }else{
+            for(int i=0;i<favorites.size();i++){
+                final Uri u=favorites.get(i);
+                LinearLayout row=new LinearLayout(this);
+                row.setOrientation(LinearLayout.HORIZONTAL);
+                row.setGravity(Gravity.CENTER_VERTICAL);
+                row.setPadding(8,8,8,8);
+
+                TextView name=makeInfoText(getFavoriteName(u));
+                name.setTextSize(15);
+                name.setGravity(Gravity.RIGHT|Gravity.CENTER_VERTICAL);
+                name.setSingleLine(true);
+                row.addView(name,new LinearLayout.LayoutParams(0,56,1));
+
+                Button delete=new Button(this);
+                delete.setText("🗑️");
+                delete.setTextSize(20);
+                delete.setContentDescription("מחק מהמועדפים");
+                delete.setAllCaps(false);
+                delete.setOnClickListener(v->{
+                    favorites.remove(u);
+                    saveFavorites();
+                    if(favorites.isEmpty()){
+                        dialog.dismiss();
+                        toast("המועדפים ריקים");
+                    }else{
+                        dialog.dismiss();
+                        showFavoritesList();
+                    }
+                });
+                row.addView(delete,new LinearLayout.LayoutParams(64,56));
+
+                row.setOnClickListener(v->{
+                    ArrayList<Uri> favItems=new ArrayList<>(favorites);
+                    int index=favItems.indexOf(u);
+                    if(index<0)return;
+                    dialog.dismiss();
+                    items.clear();
+                    items.addAll(favItems);
+                    pos=index;
+                    openViewer();
+                });
+                list.addView(row);
+                View divider=new View(this);
+                divider.setBackgroundColor(0xFF33333D);
+                list.addView(divider,new LinearLayout.LayoutParams(-1,1));
+            }
+        }
+        ScrollView scroll=new ScrollView(this);
+        scroll.addView(list);
+        AlertDialog dialog=new AlertDialog.Builder(this)
+            .setTitle("⭐ המועדפים")
+            .setView(scroll)
+            .setNegativeButton("סגור",null)
+            .create();
+        dialog.show();
+    }
+
+    String getFavoriteName(Uri u){
+        try{
+            String name=null;
+            android.database.Cursor c=getContentResolver().query(u,new String[]{android.provider.OpenableColumns.DISPLAY_NAME},null,null,null);
+            if(c!=null){if(c.moveToFirst())name=c.getString(0);c.close();}
+            if(name!=null&&!name.isEmpty())return name;
+        }catch(Exception ignored){}
+        String s=u.toString();
+        int slash=s.lastIndexOf('/');
+        return slash>=0&&slash<s.length()-1?s.substring(slash+1):s;
+    }
+
     void updateFavoriteIcon(){
         if(favorite==null)return;
         boolean on=!items.isEmpty() && favorites.contains(items.get(pos));
