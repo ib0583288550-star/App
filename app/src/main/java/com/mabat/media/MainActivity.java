@@ -520,10 +520,10 @@ public class MainActivity extends Activity implements TextureView.SurfaceTexture
                     favorites.remove(u);
                     saveFavorites();
                     if(favorites.isEmpty()){
-                        dialog.dismiss();
+                        dialogRef[0].dismiss();
                         toast("המועדפים ריקים");
                     }else{
-                        dialog.dismiss();
+                        dialogRef[0].dismiss();
                         showFavoritesList();
                     }
                 });
@@ -533,7 +533,7 @@ public class MainActivity extends Activity implements TextureView.SurfaceTexture
                     ArrayList<Uri> favItems=new ArrayList<>(favorites);
                     int index=favItems.indexOf(u);
                     if(index<0)return;
-                    dialog.dismiss();
+                    dialogRef[0].dismiss();
                     items.clear();
                     items.addAll(favItems);
                     pos=index;
@@ -547,12 +547,13 @@ public class MainActivity extends Activity implements TextureView.SurfaceTexture
         }
         ScrollView scroll=new ScrollView(this);
         scroll.addView(list);
-        AlertDialog dialog=new AlertDialog.Builder(this)
+        final AlertDialog[] dialogRef=new AlertDialog[1];
+        dialogRef[0]=new AlertDialog.Builder(this)
             .setTitle("⭐ המועדפים")
             .setView(scroll)
             .setNegativeButton("סגור",null)
             .create();
-        dialog.show();
+        dialogRef[0].show();
     }
 
     String getFavoriteName(Uri u){
