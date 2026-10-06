@@ -98,6 +98,13 @@ public class MainActivity extends Activity implements TextureView.SurfaceTexture
         if(e.getAction()==MotionEvent.ACTION_MOVE){
             float dx=e.getX()-downX, dy=e.getY()-downY;
             // Once long-press speed mode is active, vertical movement belongs to the 2x lock gesture.
+            // A downward gesture first activates 2x, then locks it once the finger passes the lock threshold.
+            if(isVideo()&&prefs.getBoolean("speedLock",true)&&dy>35&&!longPressing){
+                if(longPressRunnable!=null){handler.removeCallbacks(longPressRunnable);longPressRunnable=null;}
+                longPressing=true;
+                setSpeed(2f);
+                moved=true;
+            }
             if(longPressing&&prefs.getBoolean("speedLock",true)&&dy>70&&!lockGestureHandled){
                 lockGestureHandled=true;
                 speedLocked=!speedLocked;
