@@ -812,7 +812,18 @@ public class MainActivity extends Activity implements TextureView.SurfaceTexture
         dlg.show();
     }
 
-    void deleteMediaUri(Uri u) throws Exception {\n        try {\n            if (DocumentsContract.isDocumentUri(this,u)) {\n                if (!DocumentsContract.deleteDocument(getContentResolver(), u)) throw new IOException("delete failed");\n                return;\n            }\n        } catch (Exception ignored) {}\n        int rows=getContentResolver().delete(u,null,null);\n        if(rows<=0) throw new IOException("delete failed");\n    }\n\n    void toast(String s){Toast.makeText(this,s,Toast.LENGTH_SHORT).show();}
+    void deleteMediaUri(Uri u) throws Exception {
+        try {
+            if (DocumentsContract.isDocumentUri(this,u)) {
+                if (!DocumentsContract.deleteDocument(getContentResolver(), u)) throw new IOException("delete failed");
+                return;
+            }
+        } catch (Exception ignored) {}
+        int rows=getContentResolver().delete(u,null,null);
+        if(rows<=0) throw new IOException("delete failed");
+    }
+
+    void toast(String s){Toast.makeText(this,s,Toast.LENGTH_SHORT).show();}
 
     @Override public void onSurfaceTextureAvailable(SurfaceTexture st,int w,int h){if(movie.getTag()!=null)prepareVideo((Uri)movie.getTag(),st);}
     @Override public void onSurfaceTextureSizeChanged(SurfaceTexture st,int w,int h){if(player!=null)fitVideo(player.getVideoWidth(),player.getVideoHeight());}
