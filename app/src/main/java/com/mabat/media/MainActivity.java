@@ -84,7 +84,7 @@ public class MainActivity extends Activity implements TextureView.SurfaceTexture
         share.setOnClickListener(v->share());
         if(favorite!=null) favorite.setOnClickListener(v->toggleFavorite());
         updateFavoriteIcon();
-        TextView lockView=findViewById(R.id.lock); if(lockView!=null){ lockView.setText(""); lockView.setCompoundDrawablesWithIntrinsicBounds(android.R.drawable.ic_menu_delete,0,0,0); lockView.setVisibility(View.VISIBLE); lockView.setContentDescription("מחק את הסרטון"); lockView.setOnClickListener(v->{ if(!items.isEmpty()){ Uri u=items.get(pos); favorites.remove(u); saveFavorites(); try{ getContentResolver().delete(u,null,null); toast("הסרטון נמחק"); items.remove(pos); if(items.isEmpty()){ releasePlayer(); closeViewer(); } else { if(pos>=items.size()) pos=items.size()-1; render(); } }catch(Exception e){ toast("לא ניתן למחוק את הסרטון"); } } }); }
+        TextView lockView=findViewById(R.id.lock); if(lockView!=null){ lockView.setText(""); lockView.setCompoundDrawablesWithIntrinsicBounds(android.R.drawable.ic_menu_delete,0,0,0); lockView.setVisibility(View.VISIBLE); lockView.setContentDescription("מחק את הסרטון"); lockView.setOnClickListener(v->{ if(!items.isEmpty()){ Uri u=items.get(pos); favorites.remove(u); saveFavorites(); try{ deleteMediaUri(u); toast("הסרטון נמחק"); items.remove(pos); if(items.isEmpty()){ releasePlayer(); closeViewer(); } else { if(pos>=items.size()) pos=items.size()-1; render(); } }catch(Exception e){ toast("לא ניתן למחוק את הסרטון"); } } }); }
         seekBar.setOnSeekBarChangeListener(new SeekBar.OnSeekBarChangeListener(){
             public void onProgressChanged(SeekBar b,int p,boolean fromUser){
                 if(fromUser && player!=null && player.getDuration()>0) player.seekTo((int)((long)p*player.getDuration()/1000L));
@@ -307,8 +307,8 @@ public class MainActivity extends Activity implements TextureView.SurfaceTexture
         root.addView(splash,new ViewGroup.LayoutParams(-1,-1));
         splash.setAlpha(0f);
         splash.setScaleX(.92f); splash.setScaleY(.92f);
-        splash.animate().alpha(1f).scaleX(1f).scaleY(1f).setDuration(900).setInterpolator(new AccelerateDecelerateInterpolator()).withEndAction(()->{
-            splash.animate().alpha(0f).scaleX(1.06f).scaleY(1.06f).setStartDelay(1000).setDuration(900).setInterpolator(new AccelerateDecelerateInterpolator()).withEndAction(()->root.removeView(splash)).start();
+        splash.animate().alpha(1f).scaleX(1f).scaleY(1f).setDuration(280).setInterpolator(new AccelerateDecelerateInterpolator()).withEndAction(()->{
+            splash.animate().alpha(0f).scaleX(1.06f).scaleY(1.06f).setStartDelay(250).setDuration(280).setInterpolator(new AccelerateDecelerateInterpolator()).withEndAction(()->root.removeView(splash)).start();
         }).start();
     }
 
@@ -681,7 +681,7 @@ public class MainActivity extends Activity implements TextureView.SurfaceTexture
         releasePlayer();
         if(prefs.getBoolean("transitionAnim",true)) viewer.setAlpha(0.92f); else viewer.setAlpha(1f);
         viewer.setTranslationY(18f);
-        if(prefs.getBoolean("transitionAnim",true)) viewer.animate().alpha(1f).translationY(0f).setDuration(220).setInterpolator(new AccelerateDecelerateInterpolator()).start();
+        if(prefs.getBoolean("transitionAnim",true)) viewer.animate().alpha(1f).translationY(0f).setDuration(90).setInterpolator(new AccelerateDecelerateInterpolator()).start();
         Uri u=items.get(pos); boolean vid=isVideoUri(u);
         movie.setVisibility(vid?View.VISIBLE:View.GONE); picture.setVisibility(vid?View.GONE:View.VISIBLE);
         if(vid){
@@ -812,7 +812,7 @@ public class MainActivity extends Activity implements TextureView.SurfaceTexture
         dlg.show();
     }
 
-    void toast(String s){Toast.makeText(this,s,Toast.LENGTH_SHORT).show();}
+    void deleteMediaUri(Uri u) throws Exception {\n        try {\n            if (DocumentsContract.isDocumentUri(this,u)) {\n                if (!DocumentsContract.deleteDocument(getContentResolver(), u)) throw new IOException("delete failed");\n                return;\n            }\n        } catch (Exception ignored) {}\n        int rows=getContentResolver().delete(u,null,null);\n        if(rows<=0) throw new IOException("delete failed");\n    }\n\n    void toast(String s){Toast.makeText(this,s,Toast.LENGTH_SHORT).show();}
 
     @Override public void onSurfaceTextureAvailable(SurfaceTexture st,int w,int h){if(movie.getTag()!=null)prepareVideo((Uri)movie.getTag(),st);}
     @Override public void onSurfaceTextureSizeChanged(SurfaceTexture st,int w,int h){if(player!=null)fitVideo(player.getVideoWidth(),player.getVideoHeight());}
