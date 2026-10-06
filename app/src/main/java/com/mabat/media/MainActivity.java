@@ -65,7 +65,7 @@ public class MainActivity extends Activity implements TextureView.SurfaceTexture
 
         home=findViewById(R.id.home); viewer=findViewById(R.id.viewer);
         picture=findViewById(R.id.picture); movie=findViewById(R.id.movie);
-        share=findViewById(R.id.share); favorite=findViewById(R.id.favorite); if(share!=null){ share.setCompoundDrawablesWithIntrinsicBounds(android.R.drawable.ic_menu_share,0,0,0); share.setCompoundDrawablePadding(0); }
+        share=findViewById(R.id.share); favorite=findViewById(R.id.favorite); if(share!=null){ share.setText(""); share.setCompoundDrawablesWithIntrinsicBounds(android.R.drawable.ic_menu_share,0,0,0); share.setCompoundDrawablePadding(0); }
         count=findViewById(R.id.count); status=findViewById(R.id.status); speed=findViewById(R.id.speed);
         pauseIndicator=findViewById(R.id.pauseIndicator);
         seekBar=findViewById(R.id.seekBar); timeText=findViewById(R.id.timeText);
@@ -571,9 +571,10 @@ public class MainActivity extends Activity implements TextureView.SurfaceTexture
     void updateFavoriteIcon(){
         if(favorite==null)return;
         boolean on=!items.isEmpty() && favorites.contains(items.get(pos));
-        favorite.setText(on?"★":"☆");
+        favorite.setText("");
+        favorite.setCompoundDrawablesWithIntrinsicBounds(on?android.R.drawable.btn_star_big_on:android.R.drawable.btn_star_big_off,0,0,0);
+        favorite.setCompoundDrawablePadding(0);
         favorite.setTextColor(on?0xFFFFD600:Color.WHITE);
-        favorite.setTextSize(28);
     }
     void animateFavoriteToCorner(){
         if(favorite==null || viewer.getWidth()<=0 || viewer.getHeight()<=0)return;
