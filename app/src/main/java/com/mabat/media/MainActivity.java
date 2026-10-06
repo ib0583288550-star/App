@@ -490,6 +490,7 @@ public class MainActivity extends Activity implements TextureView.SurfaceTexture
     void saveFavorites(){StringBuilder b=new StringBuilder();for(Uri u:favorites){if(b.length()>0)b.append("\n");b.append(u);}likes.edit().putString("favorites",b.toString()).apply();}
     void loadFavorites(){String s=likes.getString("favorites","");if(!s.isEmpty())for(String x:s.split("\\n"))try{favorites.add(Uri.parse(x));}catch(Exception ignored){}}
     void showFavoritesList(){
+        final AlertDialog[] dialogRef=new AlertDialog[1];
         LinearLayout list=new LinearLayout(this);
         list.setOrientation(LinearLayout.VERTICAL);
         list.setPadding(12,8,12,8);
@@ -547,7 +548,6 @@ public class MainActivity extends Activity implements TextureView.SurfaceTexture
         }
         ScrollView scroll=new ScrollView(this);
         scroll.addView(list);
-        final AlertDialog[] dialogRef=new AlertDialog[1];
         dialogRef[0]=new AlertDialog.Builder(this)
             .setTitle("⭐ המועדפים")
             .setView(scroll)
