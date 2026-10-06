@@ -589,11 +589,11 @@ public class MainActivity extends Activity implements TextureView.SurfaceTexture
             "🎨 צבעי האפליקציה\n• צבעים מהעיגולים משתנים מיד.\n• אפשר צבע מותאם אישית עם גוון ואטימות.\n• בצבעים בהירים, כולל לבן, הכיתוב הופך לשחור.\n• ״שמור וסגור״ שומר; ״ביטול״ מחזיר את הצבע הקודם.\n\n"+
             "⏸️ יציאה מהאפליקציה\n• ביציאה הסרטון נעצר.\n• בחזרה לאפליקציה הוא לא ממשיך אוטומטית.\n\n"+
             "📤 שיתוף\n• כפתור השיתוף משתף את הפריט שמוצג כרגע.\n\n"+
-            "ℹ️ אודות\nטיק דוס • YB Apps\n\nגרסה 01"
+            "ℹ️ אודות\nטיק דוס • YB Apps\n\nגרסה 0.1"
         );
         scroll.addView(guide);
         AlertDialog dlg=new AlertDialog.Builder(this)
-            .setTitle("📖 מדריך טיק דוס • גרסה 01")
+            .setTitle("📖 מדריך טיק דוס • גרסה 0.1")
             .setView(scroll)
             .setPositiveButton("סגור",null).create();
         dlg.setOnShowListener(v->{dlg.getButton(AlertDialog.BUTTON_POSITIVE).setTextColor(0xFFB9A7FF);});
@@ -625,7 +625,7 @@ public class MainActivity extends Activity implements TextureView.SurfaceTexture
         company.setTextColor(0xFFB9A7FF);
         box.addView(company);
 
-        TextView version=makeInfoText("גרסה 01");
+        TextView version=makeInfoText("גרסה 0.1");
         version.setGravity(Gravity.CENTER);
         version.setTextSize(13);
         version.setTextColor(0xFF9696A8);
