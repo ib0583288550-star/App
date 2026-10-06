@@ -263,7 +263,7 @@ public class MainActivity extends Activity implements TextureView.SurfaceTexture
         Button choose=new Button(this);choose.setText("בחר תמונה");choose.setAllCaps(false);box.addView(choose);
         AlertDialog dlg=new AlertDialog.Builder(this).setTitle("ברוכים הבאים לטיק דוס").setView(box).setNegativeButton("דלג",null).create();
         choose.setOnClickListener(v->startActivityForResult(new Intent(Intent.ACTION_OPEN_DOCUMENT).setType("image/*").addCategory(Intent.CATEGORY_OPENABLE).addFlags(Intent.FLAG_GRANT_READ_URI_PERMISSION|Intent.FLAG_GRANT_PERSISTABLE_URI_PERMISSION),8));
-        dlg.setOnDismissListener(d->{if(!prefs.getBoolean("imageConfigured",false)) prefs.edit().putBoolean("imageConfigured",true).apply(); if(!prefs.getBoolean("zoomConfigured",false)) handler.postDelayed(this::showFirstZoomSetup,250);});
+        dlg.setOnDismissListener(d->{if(!prefs.getBoolean("imageConfigured",false)) prefs.edit().putBoolean("imageConfigured",true).apply();});
         dlg.show();
     }
 
