@@ -832,13 +832,22 @@ public class MainActivity extends Activity implements TextureView.SurfaceTexture
     }
     @Override protected void onStop(){
         super.onStop();
-        // Leaving the app must stop playback completely; do not leave a MediaPlayer running in background.
+        // Leaving the app must stop playback completely and release the player.
+        // This prevents audio/video from continuing in the background.
+        saveLastPosition();
+        speedLocked=false;
+        stopSpeedIndicator();
         if(player!=null){
             try{player.pause();}catch(Exception ignored){}
             try{player.setPlaybackParams(new PlaybackParams().setSpeed(1f));}catch(Exception ignored){}
+            try{player.stop();}catch(Exception ignored){}
+            try{player.release();}catch(Exception ignored){}
+            player=null;
         }
-        speedLocked=false;
-        stopSpeedIndicator();
+        if(progressUpdater!=null){
+            handler.removeCallbacks(progressUpdater);
+            progressUpdater=null;
+        }
     }
     @Override protected void onResume(){
         super.onResume();
