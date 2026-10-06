@@ -197,8 +197,7 @@ public class MainActivity extends Activity implements TextureView.SurfaceTexture
 
             if(longPressRunnable!=null){handler.removeCallbacks(longPressRunnable);longPressRunnable=null;}
 
-            // A completed side long-press is temporary x2 while held.
-            if(longPressing){
+            // A completed side long-press is temporary x2 while held.            if(longPressing){
                 if(!speedLocked){
                     setSpeed(1f);
                     if(wasPlayingBeforeGesture && player!=null && !player.isPlaying()){
@@ -397,8 +396,7 @@ public class MainActivity extends Activity implements TextureView.SurfaceTexture
         SeekBar alpha=new SeekBar(this);alpha.setMax(255);alpha.setProgress(255);box.addView(alpha);
         TextView alphaText=new TextView(this);alphaText.setText("אטימות: 100%");alphaText.setGravity(Gravity.CENTER);box.addView(alphaText);
         Runnable refresh=()->{
-            float[] hsv={hue.getProgress(),0.72f,1f};int c=Color.HSVToColor(alpha.getProgress(),hsv);
-            preview.setBackgroundColor(c);preview.setTextColor(contrastTextColor(c));applyAccent(c);
+            float[] hsv={hue.getProgress(),0.72f,1f};int c=Color.HSVToColor(alpha.getProgress(),hsv);            preview.setBackgroundColor(c);preview.setTextColor(contrastTextColor(c));applyAccent(c);
             alphaText.setText("אטימות: "+Math.round(alpha.getProgress()*100f/255f)+"%");
         };
         hue.setOnSeekBarChangeListener(new SeekBar.OnSeekBarChangeListener(){public void onProgressChanged(SeekBar b,int p,boolean f){refresh.run();if(f){float[] hsv={hue.getProgress(),0.72f,1f};applyAccent(Color.HSVToColor(alpha.getProgress(),hsv));}}public void onStartTrackingTouch(SeekBar b){}public void onStopTrackingTouch(SeekBar b){}});
@@ -597,8 +595,7 @@ public class MainActivity extends Activity implements TextureView.SurfaceTexture
     }
     void animateFavoriteToCorner(){
         if(favorite==null || viewer.getWidth()<=0 || viewer.getHeight()<=0)return;
-        TextView flying=new TextView(this);
-        flying.setText("★");
+        TextView flying=new TextView(this);        flying.setText("★");
         flying.setTextColor(0xFFFFD600);
         flying.setTextSize(46);
         flying.setGravity(Gravity.CENTER);
@@ -775,14 +772,15 @@ public class MainActivity extends Activity implements TextureView.SurfaceTexture
         ScrollView scroll=new ScrollView(this);
         scroll.setBackgroundColor(0xFF15151D);
         TextView guide=makeInfoText(
-            "📖 מדריך מלא לטיק דוס\n\n"+
-            "🏠 מסך הבית\n• הלוגו למעלה הוא הלוגו של האפליקציה.\n• ״הוסף תיקיות״ – בוחרים תיקייה מהמכשיר ואפשר להוסיף כמה.\n• ״פתח את הפיד״ – סורק את התיקיות ומציג תמונות וסרטונים.\n\n"+
-            "🎬 צפייה בפיד\n• החלקה למעלה – פריט הבא.\n• החלקה למטה – פריט קודם.\n• לחיצה אחת במסך – עוצרת סרטון מתנגן, או ממשיכה סרטון מושהה, ומציגה את הכפתורים.\n• לחיצה כפולה באמצע המסך – מוסיפה או מסירה את הפריט מהמועדפים.\n• לחיצה ארוכה בצד ימין או שמאל – כפול 2 בזמן ההחזקה.\n• לחיצה ארוכה בצד ימין או שמאל והחלקה למטה – נעילת כפול 2. אותה מחווה שוב משחררת את הנעילה.\n• החלקה רגילה למעלה/למטה – מעבר רגיל בין סרטונים.\n• כפתור החזרה מציג רק את החץ; כפתור השיתוף נמצא בפינה שממול.\n• כשהפקדים מוסתרים, אפשר לגעת באזור התחתון שבו נמצא פס הזמן כדי לחשוף אותו זמנית, להחליק למיקום הרצוי, וכשעוזבים הוא נעלם שוב אם הוא מוגדר כמוסתר.\n\n"+
-            "⚙️ הגדרות\n• הסתרת כפתורים – אפשר להפעיל או לבטל הסתרה אוטומטית.\n• זמן הסתרת כפתורים – אפשר לבחור 1, 2, 3, 4 או 5 שניות. כשהכפתורים נעלמים, אזור פס הזמן עדיין ניתן להחלקה.\n• פס זמן הסרטון – אפשר להציג או להסתיר את הסליידר. כשהוא מוסתר, נוגעים או מחליקים בדיוק באזור התחתון שבו הוא אמור להיות: הסליידר מתגלה, אפשר לגרור אותו לזמן הרצוי, וברגע שמשחררים הוא נעלם שוב.\n• לחיצה ארוכה בצד ימין או שמאל – מפעילה כפול 2 בזמן ההחזקה. גרירה למטה נועלת את כפול 2, ואותה מחווה שוב משחררת את הנעילה.\n• לחיצה אחת בכל מקום במסך – עצירה/המשך של הסרטון והצגת הפקדים; לחיצה כפולה באמצע מנהלת את הכוכב.\n• נעילת כפול 2 – לחיצה ארוכה והחלקה למטה נועלת; אותה מחווה שוב מבטלת את הנעילה.\n• נעילת מסך – אפשר לבחור אם אייקון הנעילה יוצג בנגן. אפשר גם לנעול ולשחרר את המסך דרך האייקון.\n• הפעלה אוטומטית – קובעת אם סרטון חדש יתחיל מיד.\n• אנימציית מעבר – מעבר חלק בין פריטים.\n"+
-            "🎨 צבעי האפליקציה\n• צבעים מהעיגולים משתנים מיד.\n• אפשר צבע מותאם אישית עם גוון ואטימות.\n• בצבעים בהירים, כולל לבן, הכיתוב הופך לשחור.\n• ״שמור וסגור״ שומר; ״ביטול״ מחזיר את הצבע הקודם.\n\n"+
-            "⏸️ יציאה מהאפליקציה\n• ביציאה הסרטון נעצר.\n• בחזרה לאפליקציה הוא לא ממשיך אוטומטית.\n\n"+
-            "📤 שיתוף\n• כפתור השיתוף משתף את הפריט שמוצג כרגע.\n\n"+
-            "ℹ️ אודות\nטיק דוס • YB Apps\n\nגרסה 01"
+            "📖 מדריך מלא לטיק דוס\\n\\n"+
+            "🏠 מסך הבית\\n• ״הוסף תיקיות״ – בוחר תיקייה מהמכשיר. אפשר להוסיף כמה תיקיות.\\n• ״פתח את הפיד״ – סורק את התיקיות שבחרת ומציג את התמונות והסרטונים שנמצאו.\\n• ״התאמה אישית״ – פותח את ההגדרות, המועדפים, הצבעים והמדריך.\\n\\n"+
+            "🎬 צפייה בפיד\\n• החלקה למעלה – פריט הבא.\\n• החלקה למטה – פריט קודם.\\n• לחיצה אחת – עצירה/המשך של סרטון והצגת הפקדים.\\n• לחיצה כפולה באמצע המסך – הוספה או הסרה מהמועדפים.\\n• לחיצה ארוכה בצד ימין או שמאל – כפול 2 בזמן ההחזקה.\\n• בזמן כפול 2, החלקה למטה – נועלת את כפול 2. אותה מחווה שוב מבטלת את הנעילה.\\n• כשהפקדים מוסתרים, נגיעה או החלקה באזור התחתון של פס הזמן חושפת אותו זמנית ומאפשרת לגרור לזמן הרצוי.\\n• כפתור החזרה – חוזר למסך הבית.\\n• כפתור השיתוף – משתף את הפריט שמוצג כרגע.\\n• כוכב – מוסיף/מסיר את הפריט מהמועדפים.\\n• כפתור המחיקה – מוחק את הפריט מהמכשיר וגם מסיר אותו מהמועדפים.\\n\\n"+
+            "⭐ מועדפים\\n• בתוך ״התאמה אישית״ יש כפתור ״מועדפים״.\\n• רשימת המועדפים מציגה שם ותמונה ממוזערת של כל פריט.\\n• לחיצה על פריט פותחת אותו בנגן.\\n• כפתור המחיקה בתוך רשימת המועדפים מסיר את הפריט מהמועדפים בלבד; הוא לא מוחק את הקובץ מהמכשיר.\\n• אפשר לנהל מועדפים גם דרך כפתור הכוכב בנגן או בלחיצה כפולה באמצע המסך.\\n\\n"+
+            "⚙️ הגדרות\\n• ״הסתרת כפתורים אוטומטית״ – קובעת אם הפקדים ייעלמו בזמן ניגון.\\n• ״זמן הסתרת כפתורים״ – 1 עד 5 שניות.\\n• ״לחיצה ארוכה = כפול 2״ – מפעילה/מבטלת את מחוות כפול 2.\\n• ״נעילת כפול 2 בהחלקה למטה״ – מפעילה/מבטלת את נעילת כפול 2.\\n• ״הפעל סרטון אוטומטית במעבר לפריט״ – קובעת אם סרטון חדש יתחיל מיד.\\n• ״אנימציית מעבר בין סרטונים״ – מפעילה/מבטלת את אנימציית המעבר.\\n• ״הצג פס זמן הסרטון״ – מציג/מסתיר את פס הזמן. גם כשהוא מוסתר, אפשר לגרור באזור התחתון כדי לחשוף אותו זמנית.\\n• האפשרות ״הצג נעילת מסך בנגן״ עדיין מופיעה בהגדרות, אבל בגרסה הנוכחית הכפתור בצד הנגן משמש למחיקה ולא לנעילת מסך.\\n\\n"+
+            "🎨 צבעי האפליקציה\\n• אפשר לבחור צבע מוכן או צבע מותאם אישית.\\n• צבע מותאם מאפשר לשנות גוון ואטימות.\\n• בצבעים בהירים הכיתוב מותאם אוטומטית לניגודיות.\\n\\n"+
+            "⏸️ יציאה מהאפליקציה\\n• ביציאה מהאפליקציה הסרטון נעצר והנגן משתחרר.\\n• בחזרה לאפליקציה הסרטון לא ממשיך לבד; אפשר להפעיל אותו בלחיצה.\\n\\n"+
+            "🖼️ תמונות וסרטונים\\n• הפיד תומך בתמונות ובסרטונים מהתיקיות שבחרת.\\n• סרטונים מציגים פס זמן כשהאפשרות פעילה.\\n\\n"+
+            "ℹ️ אודות\\nטיק דוס • YB Apps\\n\\nגרסה v0.1"
         );
         scroll.addView(guide);
         AlertDialog dlg=new AlertDialog.Builder(this)
@@ -797,8 +795,7 @@ public class MainActivity extends Activity implements TextureView.SurfaceTexture
         LinearLayout box=new LinearLayout(this);
         box.setOrientation(LinearLayout.VERTICAL);
         box.setGravity(Gravity.CENTER_HORIZONTAL);
-        box.setPadding(24,20,24,12);
-        box.setBackgroundColor(0xFF15151D);
+        box.setPadding(24,20,24,12);        box.setBackgroundColor(0xFF15151D);
 
         ImageView logo=new ImageView(this);
         logo.setImageResource(R.drawable.logo_tikdos);
