@@ -76,7 +76,7 @@ public class MainActivity extends Activity implements TextureView.SurfaceTexture
         findViewById(R.id.back).setOnClickListener(v->closeViewer());
         share.setOnClickListener(v->share());
         TextView favView=findViewById(R.id.favorite); if(favView!=null) favView.setOnClickListener(v->toggleFavorite());
-        TextView lockView=findViewById(R.id.lock); if(lockView!=null){ screenLocked=prefs.getBoolean("screenLock",false); lockView.setVisibility(prefs.getBoolean("showScreenLock",true)?View.VISIBLE:View.GONE); lockView.setOnClickListener(v->{screenLocked=!screenLocked;lockView.setText(screenLocked?"🔓":"🔒");toast(screenLocked?"המסך ננעל":"המסך שוחרר");}); }
+        TextView deleteView=findViewById(R.id.delete); if(deleteView!=null) deleteView.setOnClickListener(v->removeCurrentFromFavorites());
         seekBar.setOnSeekBarChangeListener(new SeekBar.OnSeekBarChangeListener(){
             public void onProgressChanged(SeekBar b,int p,boolean fromUser){
                 if(fromUser && player!=null && player.getDuration()>0) player.seekTo((int)((long)p*player.getDuration()/1000L));
@@ -317,7 +317,7 @@ public class MainActivity extends Activity implements TextureView.SurfaceTexture
         }
     }
 
-    void saveFavorites(){StringBuilder b=new StringBuilder();for(Uri u:favorites){if(b.length()>0)b.append("\n");b.append(u);}likes.edit().putString("favorites",b.toString()).apply();}
+    void removeCurrentFromFavorites(){\n        if(items.isEmpty()) return;\n        Uri u=items.get(pos);\n        if(!favorites.remove(u)){ toast("הפריט לא נמצא במועדפים"); return; }\n        saveFavorites();\n        items.remove(pos);\n        if(items.isEmpty()){ toast("הפריט נמחק מהמועדפים"); closeViewer(); return; }\n        if(pos>=items.size()) pos=items.size()-1;\n        toast("הפריט נמחק מהמועדפים");\n        render();\n    }\n\n    void saveFavorites(){StringBuilder b=new StringBuilder();for(Uri u:favorites){if(b.length()>0)b.append("\n");b.append(u);}likes.edit().putString("favorites",b.toString()).apply();}
     void loadFavorites(){String s=likes.getString("favorites","");if(!s.isEmpty())for(String x:s.split("\\n"))try{favorites.add(Uri.parse(x));}catch(Exception ignored){}}
     void showFavoritesList(){
         final Dialog dlg=new Dialog(this);
