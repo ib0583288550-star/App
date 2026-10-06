@@ -84,7 +84,7 @@ public class MainActivity extends Activity implements TextureView.SurfaceTexture
         share.setOnClickListener(v->share());
         if(favorite!=null) favorite.setOnClickListener(v->toggleFavorite());
         updateFavoriteIcon();
-        TextView lockView=findViewById(R.id.lock); if(lockView!=null){ lockView.setText("🗑"); lockView.setVisibility(View.VISIBLE); lockView.setTextSize(24); lockView.setContentDescription("מחק את הסרטון"); lockView.setOnClickListener(v->{ if(!items.isEmpty()){ Uri u=items.get(pos); favorites.remove(u); saveFavorites(); try{ getContentResolver().delete(u,null,null); toast("הסרטון נמחק"); items.remove(pos); if(items.isEmpty()){ releasePlayer(); closeViewer(); } else { if(pos>=items.size()) pos=items.size()-1; render(); } }catch(Exception e){ toast("לא ניתן למחוק את הסרטון"); } } }); }
+        TextView lockView=findViewById(R.id.lock); if(lockView!=null){ lockView.setText("⌫"); lockView.setVisibility(View.VISIBLE); lockView.setTextSize(26); lockView.setContentDescription("מחק את הסרטון"); lockView.setOnClickListener(v->{ if(!items.isEmpty()){ Uri u=items.get(pos); favorites.remove(u); saveFavorites(); try{ getContentResolver().delete(u,null,null); toast("הסרטון נמחק"); items.remove(pos); if(items.isEmpty()){ releasePlayer(); closeViewer(); } else { if(pos>=items.size()) pos=items.size()-1; render(); } }catch(Exception e){ toast("לא ניתן למחוק את הסרטון"); } } }); }
         seekBar.setOnSeekBarChangeListener(new SeekBar.OnSeekBarChangeListener(){
             public void onProgressChanged(SeekBar b,int p,boolean fromUser){
                 if(fromUser && player!=null && player.getDuration()>0) player.seekTo((int)((long)p*player.getDuration()/1000L));
