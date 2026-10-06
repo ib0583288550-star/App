@@ -84,7 +84,7 @@ public class MainActivity extends Activity implements TextureView.SurfaceTexture
         share.setOnClickListener(v->share());
         if(favorite!=null) favorite.setOnClickListener(v->toggleFavorite());
         updateFavoriteIcon();
-        TextView lockView=findViewById(R.id.lock); if(lockView!=null){ lockView.setText("🗑️"); lockView.setVisibility(View.VISIBLE); lockView.setContentDescription("מחק מהמועדפים"); lockView.setOnClickListener(v->{ if(!items.isEmpty()){ Uri u=items.get(pos); if(favorites.contains(u)){ favorites.remove(u); saveFavorites(); updateFavoriteIcon(); toast("הוסר מהמועדפים"); } else { toast("הפריט לא נמצא במועדפים"); } } }); }
+        TextView lockView=findViewById(R.id.lock); if(lockView!=null){ screenLocked=prefs.getBoolean("screenLock",false); lockView.setVisibility(prefs.getBoolean("showScreenLock",true)?View.VISIBLE:View.GONE); lockView.setText(screenLocked?"🔒":"🔓"); lockView.setOnClickListener(v->{screenLocked=!screenLocked;lockView.setText(screenLocked?"🔒":"🔓");toast(screenLocked?"המסך ננעל":"המסך שוחרר");}); }
         seekBar.setOnSeekBarChangeListener(new SeekBar.OnSeekBarChangeListener(){
             public void onProgressChanged(SeekBar b,int p,boolean fromUser){
                 if(fromUser && player!=null && player.getDuration()>0) player.seekTo((int)((long)p*player.getDuration()/1000L));
