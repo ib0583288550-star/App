@@ -65,7 +65,7 @@ public class MainActivity extends Activity implements TextureView.SurfaceTexture
 
         home=findViewById(R.id.home); viewer=findViewById(R.id.viewer);
         picture=findViewById(R.id.picture); movie=findViewById(R.id.movie);
-        share=findViewById(R.id.share); favorite=findViewById(R.id.favorite);
+        share=findViewById(R.id.share); favorite=findViewById(R.id.favorite); if(share!=null){ share.setCompoundDrawablesWithIntrinsicBounds(android.R.drawable.ic_menu_share,0,0,0); share.setCompoundDrawablePadding(0); }
         count=findViewById(R.id.count); status=findViewById(R.id.status); speed=findViewById(R.id.speed);
         pauseIndicator=findViewById(R.id.pauseIndicator);
         seekBar=findViewById(R.id.seekBar); timeText=findViewById(R.id.timeText);
@@ -84,7 +84,7 @@ public class MainActivity extends Activity implements TextureView.SurfaceTexture
         share.setOnClickListener(v->share());
         if(favorite!=null) favorite.setOnClickListener(v->toggleFavorite());
         updateFavoriteIcon();
-        TextView lockView=findViewById(R.id.lock); if(lockView!=null){ lockView.setText(""); lockView.setCompoundDrawablesWithIntrinsicBounds(android.R.drawable.ic_menu_delete,0,0,0); lockView.setVisibility(View.VISIBLE); lockView.setContentDescription("מחק את הסרטון"); lockView.setOnClickListener(v->{ if(!items.isEmpty()){ Uri u=items.get(pos); favorites.remove(u); saveFavorites(); try{ deleteMediaUri(u); toast("הסרטון נמחק"); items.remove(pos); if(items.isEmpty()){ releasePlayer(); closeViewer(); } else { if(pos>=items.size()) pos=items.size()-1; render(); } }catch(Exception e){ toast("לא ניתן למחוק את הסרטון"); } } }); }
+        TextView lockView=findViewById(R.id.lock); if(lockView!=null){ lockView.setText(""); lockView.setCompoundDrawablesWithIntrinsicBounds(android.R.drawable.ic_menu_delete,0,0,0); lockView.setVisibility(View.VISIBLE); lockView.setTranslationY(-2f); lockView.setContentDescription("מחק את הסרטון"); lockView.setOnClickListener(v->{ if(!items.isEmpty()){ Uri u=items.get(pos); favorites.remove(u); saveFavorites(); try{ deleteMediaUri(u); toast("הסרטון נמחק"); items.remove(pos); if(items.isEmpty()){ releasePlayer(); closeViewer(); } else { if(pos>=items.size()) pos=items.size()-1; render(); } }catch(Exception e){ toast("לא ניתן למחוק את הסרטון"); } } }); }
         seekBar.setOnSeekBarChangeListener(new SeekBar.OnSeekBarChangeListener(){
             public void onProgressChanged(SeekBar b,int p,boolean fromUser){
                 if(fromUser && player!=null && player.getDuration()>0) player.seekTo((int)((long)p*player.getDuration()/1000L));
