@@ -7,6 +7,8 @@ import android.net.Uri;
 import android.os.*;
 import android.provider.DocumentsContract;
 import android.provider.MediaStore;
+import android.provider.OpenableColumns;
+import android.media.MediaMetadataRetriever;
 import android.view.*;
 import android.widget.*;
 import android.graphics.Matrix;
@@ -93,8 +95,29 @@ public class MainActivity extends Activity implements TextureView.SurfaceTexture
         if(screenLocked && e.getAction()!=MotionEvent.ACTION_DOWN) return true;
         if(e.getAction()==MotionEvent.ACTION_DOWN){ if(screenLocked)return true;downX=e.getX();downY=e.getY();downTime=System.currentTimeMillis();moved=false;longPressing=false;lockGestureHandled=false;hiddenSeekDragging=(seekBar.getVisibility()!=View.VISIBLE&&player!=null&&player.getDuration()>0);
             if(isVideo()&&prefs.getBoolean("longSpeed",true)){ longPressRunnable=()->{if(!moved&&isVideo()){longPressing=true;setSpeed(2f);}}; handler.postDelayed(longPressRunnable,320); } return true;}
-        if(e.getAction()==MotionEvent.ACTION_MOVE){if(hiddenSeekDragging&&player!=null&&player.getDuration()>0&&Math.abs(e.getX()-downX)>10&&Math.abs(e.getX()-downX)>=Math.abs(e.getY()-downY)){if(longPressRunnable!=null){handler.removeCallbacks(longPressRunnable);longPressRunnable=null;}longPressing=false;moved=true;int w=Math.max(1,viewer.getWidth());int p=(int)(Math.max(0,Math.min(w,e.getX()))*1000f/w);player.seekTo((int)((long)p*player.getDuration()/1000L));updateTime();return true;}if(Math.abs(e.getX()-downX)>35||Math.abs(e.getY()-downY)>35)moved=true;
-            if(longPressing&&prefs.getBoolean("speedLock",true)&&e.getY()-downY>90&&!lockGestureHandled){lockGestureHandled=true;speedLocked=!speedLocked;if(speedLocked){setSpeed(2f);speed.setText("כפול 2 • נעול");speed.setVisibility(View.VISIBLE);}else{setSpeed(1f);toast("נעילת כפול 2 בוטלה");}}return true;}
+        if(e.getAction()==MotionEvent.ACTION_MOVE){
+            float dx=e.getX()-downX, dy=e.getY()-downY;
+            // Once long-press speed mode is active, vertical movement belongs to the 2x lock gesture.
+            if(longPressing&&prefs.getBoolean("speedLock",true)&&dy>70&&!lockGestureHandled){
+                lockGestureHandled=true;
+                speedLocked=!speedLocked;
+                if(speedLocked){setSpeed(2f);speed.setText("כפול 2 • נעול");speed.setVisibility(View.VISIBLE);}
+                else{setSpeed(1f);toast("נעילת כפול 2 בוטלה");}
+                moved=true;
+                return true;
+            }
+            // Hidden seek is horizontal only; vertical swipes must remain available for next/previous.
+            if(hiddenSeekDragging&&player!=null&&player.getDuration()>0&&Math.abs(dx)>18&&Math.abs(dx)>=Math.abs(dy)*1.15f){
+                if(longPressRunnable!=null){handler.removeCallbacks(longPressRunnable);longPressRunnable=null;}
+                longPressing=false;moved=true;
+                int w=Math.max(1,viewer.getWidth());
+                int p=(int)(Math.max(0,Math.min(w,e.getX()))*1000f/w);
+                player.seekTo((int)((long)p*player.getDuration()/1000L));
+                updateTime();return true;
+            }
+            if(Math.abs(dx)>35||Math.abs(dy)>35)moved=true;
+            return true;
+        }
         if(e.getAction()==MotionEvent.ACTION_UP){if(hiddenSeekDragging){hiddenSeekDragging=false;if(!prefs.getBoolean("showSeekBar",true))seekBar.setVisibility(View.GONE);return true;}if(longPressRunnable!=null){handler.removeCallbacks(longPressRunnable);longPressRunnable=null;}if(longPressing){if(!speedLocked)setSpeed(1f);longPressing=false;scheduleControlsHide();return true;}
             if(moved){float d=e.getY()-downY;if(Math.abs(d)>90){if(d<0)next();else prev();}return true;}
             if(System.currentTimeMillis()-downTime<300){if(doubleTapPending){doubleTapPending=false;
@@ -144,7 +167,7 @@ public class MainActivity extends Activity implements TextureView.SurfaceTexture
         CheckBox tr=new CheckBox(this);tr.setText("אנימציית מעבר בין סרטונים");tr.setChecked(prefs.getBoolean("transitionAnim",true));
         CheckBox sl=new CheckBox(this);sl.setText("הצג נעילת מסך בנגן");sl.setChecked(prefs.getBoolean("showScreenLock",true));
         CheckBox sb=new CheckBox(this);sb.setText("הצג פס זמן הסרטון");sb.setChecked(prefs.getBoolean("showSeekBar",true));
-        Button fav=new Button(this);fav.setText("⭐ מועדפים");fav.setAllCaps(false);fav.setOnClickListener(v->{if(favorites.isEmpty()){toast("אין מועדפים עדיין");return;}items.clear();items.addAll(favorites);pos=0;openViewer();});box.addView(fav);Button colors=new Button(this);colors.setText("🎨 צבעי האפליקציה");colors.setOnClickListener(v->showColorSettings());
+        Button fav=new Button(this);fav.setText("⭐ מועדפים");fav.setAllCaps(false);fav.setOnClickListener(v->showFavoritesList());box.addView(fav);Button colors=new Button(this);colors.setText("🎨 צבעי האפליקציה");colors.setOnClickListener(v->showColorSettings());
         Button guideBtn=new Button(this);guideBtn.setText("📖 מדריך והוראות");guideBtn.setAllCaps(false);guideBtn.setOnClickListener(v->showGuide());
         Button aboutBtn=new Button(this);aboutBtn.setText("ℹ️ אודות");aboutBtn.setAllCaps(false);aboutBtn.setOnClickListener(v->showAbout());
         Button hideDelay=new Button(this);hideDelay.setText("זמן הסתרת כפתורים: "+prefs.getInt("hideDelay",2)+" שניות");hideDelay.setAllCaps(false);hideDelay.setOnClickListener(v->{String[] opts={"1 שנייה","2 שניות","3 שניות","4 שניות","5 שניות"};new AlertDialog.Builder(this).setTitle("אחרי כמה זמן להסתיר?").setSingleChoiceItems(opts,prefs.getInt("hideDelay",2)-1,(d,w)->{prefs.edit().putInt("hideDelay",w+1).apply();hideDelay.setText("זמן הסתרת כפתורים: "+(w+1)+" שניות");d.dismiss();}).show();});
@@ -289,6 +312,143 @@ public class MainActivity extends Activity implements TextureView.SurfaceTexture
 
     void saveFavorites(){StringBuilder b=new StringBuilder();for(Uri u:favorites){if(b.length()>0)b.append("\n");b.append(u);}likes.edit().putString("favorites",b.toString()).apply();}
     void loadFavorites(){String s=likes.getString("favorites","");if(!s.isEmpty())for(String x:s.split("\\n"))try{favorites.add(Uri.parse(x));}catch(Exception ignored){}}
+    void showFavoritesList(){
+        final Dialog dlg=new Dialog(this);
+        LinearLayout root=new LinearLayout(this);
+        root.setOrientation(LinearLayout.VERTICAL);
+        root.setPadding(18,18,18,12);
+        root.setBackgroundColor(0xFF111117);
+
+        LinearLayout head=new LinearLayout(this);
+        head.setGravity(Gravity.CENTER_VERTICAL);
+        TextView title=new TextView(this);
+        title.setText("⭐ המועדפים");
+        title.setTextColor(Color.WHITE);
+        title.setTextSize(22);
+        title.setTypeface(Typeface.DEFAULT,Typeface.BOLD);
+        head.addView(title,new LinearLayout.LayoutParams(0,58,1));
+        TextView close=new TextView(this);
+        close.setText("✕");
+        close.setTextColor(0xFFFFFFFF);
+        close.setTextSize(22);
+        close.setGravity(Gravity.CENTER);
+        head.addView(close,new LinearLayout.LayoutParams(54,58));
+        root.addView(head);
+
+        TextView info=new TextView(this);
+        info.setText(favorites.size()+" סרטונים/פריטים שמורים");
+        info.setTextColor(0xFF9292A2);
+        info.setTextSize(13);
+        info.setPadding(4,0,4,12);
+        root.addView(info);
+
+        ScrollView scroll=new ScrollView(this);
+        LinearLayout list=new LinearLayout(this);
+        list.setOrientation(LinearLayout.VERTICAL);
+        scroll.addView(list,new ScrollView.LayoutParams(-1,-2));
+        root.addView(scroll,new LinearLayout.LayoutParams(-1,0,1));
+
+        if(favorites.isEmpty()){
+            TextView empty=new TextView(this);
+            empty.setText("אין עדיין פריטים במועדפים");
+            empty.setTextColor(0xFFD8D8E0);
+            empty.setTextSize(16);
+            empty.setGravity(Gravity.CENTER);
+            list.addView(empty,new LinearLayout.LayoutParams(-1,220));
+        }else{
+            for(int index=0;index<favorites.size();index++){
+                final int itemIndex=index;
+                final Uri uri=favorites.get(index);
+                LinearLayout card=new LinearLayout(this);
+                card.setOrientation(LinearLayout.HORIZONTAL);
+                card.setGravity(Gravity.CENTER_VERTICAL);
+                card.setPadding(10,8,10,8);
+                android.graphics.drawable.GradientDrawable cardBg=new android.graphics.drawable.GradientDrawable();
+                cardBg.setColor(0xFF1C1C25);
+                cardBg.setCornerRadius(18);
+                card.setBackground(cardBg);
+                LinearLayout.LayoutParams cp=new LinearLayout.LayoutParams(-1,92);
+                cp.setMargins(0,0,0,10);
+                list.addView(card,cp);
+
+                ImageView thumb=new ImageView(this);
+                thumb.setScaleType(ImageView.ScaleType.CENTER_CROP);
+                thumb.setImageResource(android.R.drawable.ic_media_play);
+                LinearLayout.LayoutParams tp=new LinearLayout.LayoutParams(128,76);
+                tp.setMargins(0,0,12,0);
+                card.addView(thumb,tp);
+
+                LinearLayout texts=new LinearLayout(this);
+                texts.setOrientation(LinearLayout.VERTICAL);
+                texts.setGravity(Gravity.CENTER_VERTICAL);
+                TextView name=new TextView(this);
+                name.setText(getDisplayName(uri));
+                name.setTextColor(Color.WHITE);
+                name.setTextSize(15);
+                name.setMaxLines(2);
+                name.setEllipsize(android.text.TextUtils.TruncateAt.END);
+                TextView type=new TextView(this);
+                type.setText(isVideoUri(uri)?"🎬 סרטון":"🖼 תמונה");
+                type.setTextColor(0xFFA8A8B8);
+                type.setTextSize(12);
+                texts.addView(name);
+                texts.addView(type);
+                card.addView(texts,new LinearLayout.LayoutParams(0,-1,1));
+
+                card.setOnClickListener(v->{
+                    items.clear();
+                    items.addAll(favorites);
+                    pos=itemIndex;
+                    dlg.dismiss();
+                    openViewer();
+                });
+
+                if(isVideoUri(uri)){
+                    new Thread(()->{
+                        Bitmap b=null;
+                        MediaMetadataRetriever r=new MediaMetadataRetriever();
+                        try{
+                            r.setDataSource(this,uri);
+                            b=r.getFrameAtTime(0,MediaMetadataRetriever.OPTION_CLOSEST_SYNC);
+                        }catch(Exception ignored){}finally{try{r.release();}catch(Exception ignored){}}
+                        final Bitmap frame=b;
+                        if(frame!=null)handler.post(()->thumb.setImageBitmap(frame));
+                    }).start();
+                }else{
+                    handler.post(()->{try{thumb.setImageURI(uri);}catch(Exception ignored){}});
+                }
+            }
+        }
+
+        close.setOnClickListener(v->dlg.dismiss());
+        dlg.setContentView(root);
+        Window w=dlg.getWindow();
+        if(w!=null)w.setBackgroundDrawableResource(android.R.color.transparent);
+        dlg.show();
+        w=dlg.getWindow();
+        if(w!=null){
+            w.setBackgroundDrawableResource(android.R.color.transparent);
+            w.setLayout((int)(getResources().getDisplayMetrics().widthPixels*0.94f),
+                        (int)(getResources().getDisplayMetrics().heightPixels*0.86f));
+        }
+    }
+
+    String getDisplayName(Uri uri){
+        try{
+            android.database.Cursor c=getContentResolver().query(uri,new String[]{OpenableColumns.DISPLAY_NAME},null,null,null);
+            if(c!=null){
+                try{
+                    if(c.moveToFirst()){
+                        String n=c.getString(0);
+                        if(n!=null&&!n.isEmpty())return n;
+                    }
+                }finally{c.close();}
+            }
+        }catch(Exception ignored){}
+        String last=uri.getLastPathSegment();
+        return last==null||last.isEmpty()?"פריט ללא שם":last;
+    }
+
     void toggleFavorite(){if(items.isEmpty())return;Uri u=items.get(pos);if(favorites.contains(u)){favorites.remove(u);toast("הוסר מהמועדפים");}else{favorites.add(u);toast("נוסף למועדפים ⭐");}saveFavorites();}
     void share(){if(items.isEmpty())return;Uri u=items.get(pos);String mime=getContentResolver().getType(u);Intent i=new Intent(Intent.ACTION_SEND);i.setType(mime!=null?mime:"*/*");i.putExtra(Intent.EXTRA_STREAM,u);i.addFlags(Intent.FLAG_GRANT_READ_URI_PERMISSION);startActivity(Intent.createChooser(i,"שיתוף"));}
 
@@ -404,8 +564,8 @@ public class MainActivity extends Activity implements TextureView.SurfaceTexture
 
     void releasePlayer(){ speedLocked=false;setControlsVisible(true);if(progressUpdater!=null)handler.removeCallbacks(progressUpdater);progressUpdater=null;if(player!=null){try{player.setPlaybackParams(new PlaybackParams().setSpeed(1f));}catch(Exception ignored){}try{player.stop();}catch(Exception ignored){}player.release();player=null;}if(seekBar!=null)seekBar.setProgress(0);if(timeText!=null)timeText.setText("00:00 / 00:00");}
 
-    void next(){speedLocked=false;if(!items.isEmpty()){pos=(pos+1)%items.size();render();}}
-    void prev(){speedLocked=false;if(!items.isEmpty()){pos=(pos-1+items.size())%items.size();render();}}
+    void next(){speedLocked=false;resetPlaybackSpeed();if(!items.isEmpty()){pos=(pos+1)%items.size();render();}}
+    void prev(){speedLocked=false;resetPlaybackSpeed();if(!items.isEmpty()){pos=(pos-1+items.size())%items.size();render();}}
     TextView makeInfoText(String text){
         TextView t=new TextView(this);
         t.setText(text);
