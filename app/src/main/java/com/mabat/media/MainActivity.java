@@ -853,6 +853,23 @@ public class MainActivity extends Activity implements TextureView.SurfaceTexture
     @Override public void onSurfaceTextureSizeChanged(SurfaceTexture st,int w,int h){if(player!=null)fitVideo(player.getVideoWidth(),player.getVideoHeight());}
     @Override public boolean onSurfaceTextureDestroyed(SurfaceTexture st){releasePlayer();return true;}
     @Override public void onSurfaceTextureUpdated(SurfaceTexture st){}
+    long lastBackPressTime=0;
+
+    @Override public void onBackPressed(){
+        if(viewer!=null && viewer.getVisibility()==View.VISIBLE){
+            closeViewer();
+            return;
+        }
+        long now=System.currentTimeMillis();
+        if(now-lastBackPressTime<2000){
+            lastBackPressTime=0;
+            finish();
+        }else{
+            lastBackPressTime=now;
+            toast("לחץ שוב כדי לצאת");
+        }
+    }
+
     @Override protected void onPause(){
         super.onPause();
         saveLastPosition();
