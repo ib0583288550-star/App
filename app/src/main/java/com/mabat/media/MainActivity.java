@@ -197,8 +197,7 @@ public class MainActivity extends Activity implements TextureView.SurfaceTexture
 
             if(longPressRunnable!=null){handler.removeCallbacks(longPressRunnable);longPressRunnable=null;}
 
-            // A completed side long-press is temporary x2 while held.            if(longPressing){
-                if(!speedLocked){
+            // A completed side long-press is temporary x2 while held.            if(longPressing){                if(!speedLocked){
                     setSpeed(1f);
                     if(wasPlayingBeforeGesture && player!=null && !player.isPlaying()){
                         try{player.start();}catch(Exception ignored){}
@@ -397,8 +396,7 @@ public class MainActivity extends Activity implements TextureView.SurfaceTexture
         TextView alphaText=new TextView(this);alphaText.setText("אטימות: 100%");alphaText.setGravity(Gravity.CENTER);box.addView(alphaText);
         Runnable refresh=()->{
             float[] hsv={hue.getProgress(),0.72f,1f};int c=Color.HSVToColor(alpha.getProgress(),hsv);            preview.setBackgroundColor(c);preview.setTextColor(contrastTextColor(c));applyAccent(c);
-            alphaText.setText("אטימות: "+Math.round(alpha.getProgress()*100f/255f)+"%");
-        };
+            alphaText.setText("אטימות: "+Math.round(alpha.getProgress()*100f/255f)+"%");        };
         hue.setOnSeekBarChangeListener(new SeekBar.OnSeekBarChangeListener(){public void onProgressChanged(SeekBar b,int p,boolean f){refresh.run();if(f){float[] hsv={hue.getProgress(),0.72f,1f};applyAccent(Color.HSVToColor(alpha.getProgress(),hsv));}}public void onStartTrackingTouch(SeekBar b){}public void onStopTrackingTouch(SeekBar b){}});
         alpha.setOnSeekBarChangeListener(new SeekBar.OnSeekBarChangeListener(){public void onProgressChanged(SeekBar b,int p,boolean f){refresh.run();}public void onStartTrackingTouch(SeekBar b){}public void onStopTrackingTouch(SeekBar b){}});
         refresh.run();
@@ -497,6 +495,8 @@ public class MainActivity extends Activity implements TextureView.SurfaceTexture
             empty.setGravity(Gravity.CENTER);
             list.addView(empty,new LinearLayout.LayoutParams(-1,120));
         }else{
+            final ArrayList<ImageView> videoThumbs=new ArrayList<>();
+            final ArrayList<Uri> videoUris=new ArrayList<>();
             for(int i=0;i<favorites.size();i++){
                 final Uri u=favorites.get(i);
                 LinearLayout row=new LinearLayout(this);
@@ -509,20 +509,12 @@ public class MainActivity extends Activity implements TextureView.SurfaceTexture
                 thumb.setBackgroundColor(0xFF25252E);
                 thumb.setContentDescription("תצוגה מקדימה");
                 thumb.setImageURI(u);
-                if(isVideoUri(u)){
-                    try{
-                        MediaMetadataRetriever mmr=new MediaMetadataRetriever();
-                        mmr.setDataSource(this,u);
-                        Bitmap frame=mmr.getFrameAtTime(0,MediaMetadataRetriever.OPTION_CLOSEST_SYNC);
-                        if(frame!=null)thumb.setImageBitmap(frame);
-                        mmr.release();
-                    }catch(Exception ignored){}
-                }
+                if(isVideoUri(u)){videoThumbs.add(thumb);videoUris.add(u);}
                 LinearLayout.LayoutParams thumbLp=new LinearLayout.LayoutParams(92,64);
                 thumbLp.setMargins(4,0,12,0);
                 row.addView(thumb,thumbLp);
 
-                TextView name=makeInfoText(getFavoriteName(u));
+                TextView name=makeInfoText(getFavoriteNameFast(u));
                 name.setTextSize(15);
                 name.setGravity(Gravity.RIGHT|Gravity.CENTER_VERTICAL);
                 name.setSingleLine(true);
@@ -537,13 +529,8 @@ public class MainActivity extends Activity implements TextureView.SurfaceTexture
                 delete.setOnClickListener(v->{
                     favorites.remove(u);
                     saveFavorites();
-                    if(favorites.isEmpty()){
-                        dialogRef[0].dismiss();
-                        toast("המועדפים ריקים");
-                    }else{
-                        dialogRef[0].dismiss();
-                        showFavoritesList();
-                    }
+                    if(favorites.isEmpty()){dialogRef[0].dismiss();toast("המועדפים ריקים");}
+                    else{dialogRef[0].dismiss();showFavoritesList();}
                 });
                 row.addView(delete,new LinearLayout.LayoutParams(56,64));
 
@@ -552,25 +539,39 @@ public class MainActivity extends Activity implements TextureView.SurfaceTexture
                     int index=favItems.indexOf(u);
                     if(index<0)return;
                     dialogRef[0].dismiss();
-                    items.clear();
-                    items.addAll(favItems);
-                    pos=index;
-                    openViewer();
+                    items.clear();items.addAll(favItems);pos=index;openViewer();
                 });
                 list.addView(row);
                 View divider=new View(this);
                 divider.setBackgroundColor(0xFF33333D);
                 list.addView(divider,new LinearLayout.LayoutParams(-1,1));
             }
+            if(!videoUris.isEmpty()){
+                new Thread(()->{
+                    for(int i=0;i<videoUris.size();i++){
+                        final Uri u=videoUris.get(i);
+                        final ImageView target=videoThumbs.get(i);
+                        try{
+                            MediaMetadataRetriever mmr=new MediaMetadataRetriever();
+                            mmr.setDataSource(this,u);
+                            Bitmap frame=mmr.getFrameAtTime(0,MediaMetadataRetriever.OPTION_CLOSEST_SYNC);
+                            mmr.release();
+                            if(frame!=null)runOnUiThread(()->target.setImageBitmap(frame));
+                        }catch(Exception ignored){}
+                    }
+                }).start();
+            }
         }
         ScrollView scroll=new ScrollView(this);
         scroll.addView(list);
-        dialogRef[0]=new AlertDialog.Builder(this)
-            .setTitle("⭐ המועדפים")
-            .setView(scroll)
-            .setNegativeButton("סגור",null)
-            .create();
+        dialogRef[0]=new AlertDialog.Builder(this).setTitle("⭐ המועדפים").setView(scroll).setNegativeButton("סגור",null).create();
         dialogRef[0].show();
+    }
+
+    String getFavoriteNameFast(Uri u){
+        String s=u.toString(); int slash=s.lastIndexOf('/');
+        if(slash>=0&&slash<s.length()-1){try{return java.net.URLDecoder.decode(s.substring(slash+1),"UTF-8");}catch(Exception ignored){}}
+        return s;
     }
 
     String getFavoriteName(Uri u){
@@ -597,8 +598,7 @@ public class MainActivity extends Activity implements TextureView.SurfaceTexture
         if(favorite==null || viewer.getWidth()<=0 || viewer.getHeight()<=0)return;
         TextView flying=new TextView(this);        flying.setText("★");
         flying.setTextColor(0xFFFFD600);
-        flying.setTextSize(46);
-        flying.setGravity(Gravity.CENTER);
+        flying.setTextSize(46);        flying.setGravity(Gravity.CENTER);
         int size=70;
         FrameLayout.LayoutParams lp=new FrameLayout.LayoutParams(size,size,Gravity.TOP|Gravity.LEFT);
         viewer.addView(flying,lp);
@@ -797,8 +797,7 @@ public class MainActivity extends Activity implements TextureView.SurfaceTexture
         box.setGravity(Gravity.CENTER_HORIZONTAL);
         box.setPadding(24,20,24,12);        box.setBackgroundColor(0xFF15151D);
 
-        ImageView logo=new ImageView(this);
-        logo.setImageResource(R.drawable.logo_tikdos);
+        ImageView logo=new ImageView(this);        logo.setImageResource(R.drawable.logo_tikdos);
         logo.setScaleType(ImageView.ScaleType.CENTER_INSIDE);
         box.addView(logo,new LinearLayout.LayoutParams(-1,120));
 
