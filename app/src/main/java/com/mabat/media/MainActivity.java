@@ -197,7 +197,9 @@ public class MainActivity extends Activity implements TextureView.SurfaceTexture
 
             if(longPressRunnable!=null){handler.removeCallbacks(longPressRunnable);longPressRunnable=null;}
 
-            // A completed side long-press is temporary x2 while held.            if(longPressing){                if(!speedLocked){
+            // A completed side long-press is temporary x2 while held.
+            if(longPressing){
+                if(!speedLocked){
                     setSpeed(1f);
                     if(wasPlayingBeforeGesture && player!=null && !player.isPlaying()){
                         try{player.start();}catch(Exception ignored){}
@@ -395,8 +397,10 @@ public class MainActivity extends Activity implements TextureView.SurfaceTexture
         SeekBar alpha=new SeekBar(this);alpha.setMax(255);alpha.setProgress(255);box.addView(alpha);
         TextView alphaText=new TextView(this);alphaText.setText("אטימות: 100%");alphaText.setGravity(Gravity.CENTER);box.addView(alphaText);
         Runnable refresh=()->{
-            float[] hsv={hue.getProgress(),0.72f,1f};int c=Color.HSVToColor(alpha.getProgress(),hsv);            preview.setBackgroundColor(c);preview.setTextColor(contrastTextColor(c));applyAccent(c);
-            alphaText.setText("אטימות: "+Math.round(alpha.getProgress()*100f/255f)+"%");        };
+            float[] hsv={hue.getProgress(),0.72f,1f};int c=Color.HSVToColor(alpha.getProgress(),hsv);
+            preview.setBackgroundColor(c);preview.setTextColor(contrastTextColor(c));applyAccent(c);
+            alphaText.setText("אטימות: "+Math.round(alpha.getProgress()*100f/255f)+"%");
+        };
         hue.setOnSeekBarChangeListener(new SeekBar.OnSeekBarChangeListener(){public void onProgressChanged(SeekBar b,int p,boolean f){refresh.run();if(f){float[] hsv={hue.getProgress(),0.72f,1f};applyAccent(Color.HSVToColor(alpha.getProgress(),hsv));}}public void onStartTrackingTouch(SeekBar b){}public void onStopTrackingTouch(SeekBar b){}});
         alpha.setOnSeekBarChangeListener(new SeekBar.OnSeekBarChangeListener(){public void onProgressChanged(SeekBar b,int p,boolean f){refresh.run();}public void onStartTrackingTouch(SeekBar b){}public void onStopTrackingTouch(SeekBar b){}});
         refresh.run();
@@ -596,9 +600,11 @@ public class MainActivity extends Activity implements TextureView.SurfaceTexture
     }
     void animateFavoriteToCorner(){
         if(favorite==null || viewer.getWidth()<=0 || viewer.getHeight()<=0)return;
-        TextView flying=new TextView(this);        flying.setText("★");
+        TextView flying=new TextView(this);
+        flying.setText("★");
         flying.setTextColor(0xFFFFD600);
-        flying.setTextSize(46);        flying.setGravity(Gravity.CENTER);
+        flying.setTextSize(46);
+        flying.setGravity(Gravity.CENTER);
         int size=70;
         FrameLayout.LayoutParams lp=new FrameLayout.LayoutParams(size,size,Gravity.TOP|Gravity.LEFT);
         viewer.addView(flying,lp);
@@ -795,9 +801,11 @@ public class MainActivity extends Activity implements TextureView.SurfaceTexture
         LinearLayout box=new LinearLayout(this);
         box.setOrientation(LinearLayout.VERTICAL);
         box.setGravity(Gravity.CENTER_HORIZONTAL);
-        box.setPadding(24,20,24,12);        box.setBackgroundColor(0xFF15151D);
+        box.setPadding(24,20,24,12);
+        box.setBackgroundColor(0xFF15151D);
 
-        ImageView logo=new ImageView(this);        logo.setImageResource(R.drawable.logo_tikdos);
+        ImageView logo=new ImageView(this);
+        logo.setImageResource(R.drawable.logo_tikdos);
         logo.setScaleType(ImageView.ScaleType.CENTER_INSIDE);
         box.addView(logo,new LinearLayout.LayoutParams(-1,120));
 
