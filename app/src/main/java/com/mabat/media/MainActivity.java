@@ -50,6 +50,8 @@ public class MainActivity extends Activity implements TextureView.SurfaceTexture
     boolean resumeAfterBackground=false;
     boolean resumePrompt=false;
     int backgroundPlaybackPosition=0;
+    Uri pendingDeleteUri=null;
+    int pendingDeletePosition=-1;
     android.animation.ObjectAnimator speedAnimator;
 
     @Override public void onCreate(Bundle b) {
@@ -86,7 +88,7 @@ public class MainActivity extends Activity implements TextureView.SurfaceTexture
         share.setOnClickListener(v->share());
         if(favorite!=null) favorite.setOnClickListener(v->toggleFavorite());
         updateFavoriteIcon();
-        TextView lockView=findViewById(R.id.lock); if(lockView!=null){ lockView.setText(""); lockView.setCompoundDrawablesWithIntrinsicBounds(android.R.drawable.ic_menu_delete,0,0,0); lockView.setVisibility(View.VISIBLE); lockView.setTranslationY(-2f); lockView.setContentDescription("מחק את הסרטון"); lockView.setOnClickListener(v->{ if(!items.isEmpty()){ Uri u=items.get(pos); new AlertDialog.Builder(this).setTitle("מחיקת פריט").setMessage("למחוק את הקובץ מהמכשיר?").setNegativeButton("ביטול",null).setPositiveButton("מחק",(dlg,which)->{ try{ deleteMediaUri(u); favorites.remove(u); saveFavorites(); toast("הקובץ נמחק"); items.remove(pos); saveLastPosition(); if(items.isEmpty()){ releasePlayer(); closeViewer(); } else { if(pos>=items.size()) pos=items.size()-1; render(); } }catch(Exception e){ String reason=e.getMessage(); toast(reason==null||reason.isEmpty()?"אין הרשאת מחיקה לתיקייה הזאת":"המחיקה נכשלה: "+reason); } }).show(); } }); }
+        TextView lockView=findViewById(R.id.lock); if(lockView!=null){ lockView.setText(""); lockView.setCompoundDrawablesWithIntrinsicBounds(android.R.drawable.ic_menu_delete,0,0,0); lockView.setVisibility(View.VISIBLE); lockView.setTranslationY(-2f); lockView.setContentDescription("מחק את הסרטון"); lockView.setOnClickListener(v->{ if(!items.isEmpty()){ Uri u=items.get(pos); new AlertDialog.Builder(this).setTitle("מחיקת פריט").setMessage("למחוק את הקובץ מהמכשיר?").setNegativeButton("ביטול",null).setPositiveButton("מחק",(dlg,which)->{ try{ deleteMediaUri(u); favorites.remove(u); saveFavorites(); toast("הקובץ נמחק"); items.remove(pos); saveLastPosition(); if(items.isEmpty()){ releasePlayer(); closeViewer(); } else { if(pos>=items.size()) pos=items.size()-1; render(); } }catch(Exception e){ String reason=e.getMessage(); if(e instanceof SecurityException || (reason!=null && reason.toLowerCase(java.util.Locale.ROOT).contains("permission denied"))){ pendingDeleteUri=u; pendingDeletePosition=pos; toast("צריך לאשר מחדש גישת כתיבה לתיקיית הסרטונים"); pick(); } else { toast(reason==null||reason.isEmpty()?"אין הרשאת מחיקה לתיקייה הזאת":"המחיקה נכשלה: "+reason); } } }).show(); } }); }
         seekBar.setOnSeekBarChangeListener(new SeekBar.OnSeekBarChangeListener(){
             public void onProgressChanged(SeekBar b,int p,boolean fromUser){
                 if(fromUser && player!=null && player.getDuration()>0) player.seekTo((int)((long)p*player.getDuration()/1000L));
@@ -488,6 +490,24 @@ public class MainActivity extends Activity implements TextureView.SurfaceTexture
             Uri u=d.getData();
             try{getContentResolver().takePersistableUriPermission(u,Intent.FLAG_GRANT_READ_URI_PERMISSION|Intent.FLAG_GRANT_WRITE_URI_PERMISSION);}catch(Exception ignored){}
             if(!roots.contains(u)){roots.add(u);saveRoots();}
+            if(pendingDeleteUri!=null){
+                Uri original=pendingDeleteUri;
+                int index=pendingDeletePosition;
+                pendingDeleteUri=null; pendingDeletePosition=-1;
+                try{
+                    String documentId=DocumentsContract.getDocumentId(original);
+                    Uri grantedUri=DocumentsContract.buildDocumentUriUsingTree(u,documentId);
+                    deleteMediaUri(grantedUri);
+                    favorites.remove(original); favorites.remove(grantedUri); saveFavorites();
+                    if(index>=0 && index<items.size()) items.remove(index); else items.remove(original);
+                    if(items.isEmpty()){releasePlayer();closeViewer();}
+                    else {if(pos>=items.size())pos=items.size()-1;render();}
+                    toast("הקובץ נמחק");
+                }catch(Exception ex){
+                    toast("אנדרואיד עדיין חוסם מחיקה. בחר את אותה תיקייה שבה נמצא הסרטון ואשר גישה.");
+                }
+                return;
+            }
             status.setText("נבחרו "+roots.size()+" תיקיות. אפשר להוסיף עוד או להתחיל לצפות.");
         }
     }
