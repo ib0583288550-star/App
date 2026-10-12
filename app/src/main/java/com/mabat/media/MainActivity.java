@@ -48,6 +48,7 @@ public class MainActivity extends Activity implements TextureView.SurfaceTexture
     ArrayList<Uri> favorites=new ArrayList<>();
     boolean screenLocked=false;
     boolean resumeAfterBackground=false;
+    boolean resumePrompt=false;
     int backgroundPlaybackPosition=0;
     android.animation.ObjectAnimator speedAnimator;
 
@@ -67,7 +68,7 @@ public class MainActivity extends Activity implements TextureView.SurfaceTexture
         picture=findViewById(R.id.picture); movie=findViewById(R.id.movie);
         share=findViewById(R.id.share); favorite=findViewById(R.id.favorite); if(share!=null){ share.setText(""); share.setCompoundDrawablesWithIntrinsicBounds(android.R.drawable.ic_menu_share,0,0,0); share.setCompoundDrawablePadding(0); }
         count=findViewById(R.id.count); status=findViewById(R.id.status); speed=findViewById(R.id.speed);
-        pauseIndicator=findViewById(R.id.pauseIndicator);
+        pauseIndicator=findViewById(R.id.pauseIndicator);\n        if(pauseIndicator!=null){pauseIndicator.setClickable(true);pauseIndicator.setFocusable(true);pauseIndicator.setOnClickListener(v->resumePlaybackFromIndicator());}
         seekBar=findViewById(R.id.seekBar); timeText=findViewById(R.id.timeText);
         likes=getSharedPreferences("likes",0);
         prefs=getSharedPreferences("settings",0);
@@ -84,7 +85,7 @@ public class MainActivity extends Activity implements TextureView.SurfaceTexture
         share.setOnClickListener(v->share());
         if(favorite!=null) favorite.setOnClickListener(v->toggleFavorite());
         updateFavoriteIcon();
-        TextView lockView=findViewById(R.id.lock); if(lockView!=null){ lockView.setText(""); lockView.setCompoundDrawablesWithIntrinsicBounds(android.R.drawable.ic_menu_delete,0,0,0); lockView.setVisibility(View.VISIBLE); lockView.setTranslationY(-2f); lockView.setContentDescription("מחק את הסרטון"); lockView.setOnClickListener(v->{ if(!items.isEmpty()){ Uri u=items.get(pos); favorites.remove(u); saveFavorites(); try{ deleteMediaUri(u); toast("הסרטון נמחק"); items.remove(pos); if(items.isEmpty()){ releasePlayer(); closeViewer(); } else { if(pos>=items.size()) pos=items.size()-1; render(); } }catch(Exception e){ toast("לא ניתן למחוק את הסרטון"); } } }); }
+        TextView lockView=findViewById(R.id.lock); if(lockView!=null){ lockView.setText(""); lockView.setCompoundDrawablesWithIntrinsicBounds(android.R.drawable.ic_menu_delete,0,0,0); lockView.setVisibility(View.VISIBLE); lockView.setTranslationY(-2f); lockView.setContentDescription("מחק את הסרטון"); lockView.setOnClickListener(v->{ if(!items.isEmpty()){ Uri u=items.get(pos); new AlertDialog.Builder(this).setTitle("מחיקת פריט").setMessage("למחוק את הקובץ מהמכשיר?").setNegativeButton("ביטול",null).setPositiveButton("מחק",(dlg,which)->{ try{ deleteMediaUri(u); favorites.remove(u); saveFavorites(); toast("הקובץ נמחק"); items.remove(pos); saveLastPosition(); if(items.isEmpty()){ releasePlayer(); closeViewer(); } else { if(pos>=items.size()) pos=items.size()-1; render(); } }catch(Exception e){ String reason=e.getMessage(); toast(reason==null||reason.isEmpty()?"אין הרשאת מחיקה לתיקייה הזאת":"המחיקה נכשלה: "+reason); } }).show(); } }); }
         seekBar.setOnSeekBarChangeListener(new SeekBar.OnSeekBarChangeListener(){
             public void onProgressChanged(SeekBar b,int p,boolean fromUser){
                 if(fromUser && player!=null && player.getDuration()>0) player.seekTo((int)((long)p*player.getDuration()/1000L));
@@ -651,8 +652,10 @@ public class MainActivity extends Activity implements TextureView.SurfaceTexture
     }
     void share(){if(items.isEmpty())return;Uri u=items.get(pos);String mime=getContentResolver().getType(u);Intent i=new Intent(Intent.ACTION_SEND);i.setType(mime!=null?mime:"*/*");i.putExtra(Intent.EXTRA_STREAM,u);i.addFlags(Intent.FLAG_GRANT_READ_URI_PERMISSION);startActivity(Intent.createChooser(i,"שיתוף"));}
 
-    void showPauseIndicator(){if(pauseIndicator!=null)pauseIndicator.setVisibility(View.VISIBLE);}
+    void showPauseIndicator(){if(pauseIndicator!=null){pauseIndicator.setImageResource(android.R.drawable.ic_media_pause);pauseIndicator.setContentDescription("מושהה");pauseIndicator.setVisibility(View.VISIBLE);}}
+    void showResumeIndicator(){if(pauseIndicator!=null){pauseIndicator.setImageResource(android.R.drawable.ic_media_play);pauseIndicator.setContentDescription("המשך צפייה");pauseIndicator.setVisibility(View.VISIBLE);}}
     void hidePauseIndicator(){if(pauseIndicator!=null)pauseIndicator.setVisibility(View.GONE);}
+    void resumePlaybackFromIndicator(){if(player!=null){try{player.start();resumePrompt=false;hidePauseIndicator();setControlsVisible(true);scheduleControlsHide();}catch(Exception ignored){toast("לא ניתן להמשיך את הסרטון");}}}
 
     void saveRoots(){StringBuilder b=new StringBuilder();for(Uri u:roots){if(b.length()>0)b.append("\n");b.append(u);}likes.edit().putString("roots",b.toString()).apply();}
     void loadRoots(){String s=likes.getString("roots","");if(!s.isEmpty())for(String x:s.split("\n"))try{roots.add(Uri.parse(x));}catch(Exception ignored){} if(!roots.isEmpty())status.setText("נבחרו "+roots.size()+" תיקיות. אפשר להתחיל לצפות.");}
@@ -729,8 +732,8 @@ public class MainActivity extends Activity implements TextureView.SurfaceTexture
             player.setOnVideoSizeChangedListener((mp,w,h)->fitVideo(w,h));
             player.setOnCompletionListener(mp->{ if(!items.isEmpty()) next(); });
             player.setOnPreparedListener(mp->{try{mp.setPlaybackParams(new PlaybackParams().setSpeed(1f));}catch(Exception ignored){} fitVideo(mp.getVideoWidth(),mp.getVideoHeight());
-                boolean startNow=prefs.getBoolean("autoPlay",true) && !returningFromBackground;
-                if(startNow) mp.start(); else {try{mp.pause();}catch(Exception ignored){}}
+                if(resumePrompt){try{if(backgroundPlaybackPosition>0)mp.seekTo(Math.min(backgroundPlaybackPosition,Math.max(0,mp.getDuration()-500)));}catch(Exception ignored){} try{mp.pause();}catch(Exception ignored){} showResumeIndicator();}
+                else {boolean startNow=prefs.getBoolean("autoPlay",true) && !returningFromBackground; if(startNow) mp.start(); else {try{mp.pause();}catch(Exception ignored){} if(isVideo())showPauseIndicator();}}
                 returningFromBackground=false;updateTime();startProgressUpdater();if(mp.isPlaying())scheduleControlsHide();});
             player.prepareAsync();
         }catch(Exception e){toast("הסרטון לא ניתן להפעלה");}
@@ -787,7 +790,7 @@ public class MainActivity extends Activity implements TextureView.SurfaceTexture
             "⭐ מועדפים\n• בתוך ״הגדרות״ יש כפתור ״מועדפים״.\n• רשימת המועדפים מציגה שם ותמונה ממוזערת של כל פריט.\n• לחיצה על פריט פותחת אותו בנגן.\n• כפתור המחיקה בתוך רשימת המועדפים מסיר את הפריט מהמועדפים בלבד; הוא לא מוחק את הקובץ מהמכשיר.\n• אפשר לנהל מועדפים גם דרך כפתור הכוכב בנגן או בלחיצה כפולה באמצע המסך.\n\n"+
             "⚙️ הגדרות\n• ״הסתרת כפתורים אוטומטית״ – קובעת אם הפקדים ייעלמו בזמן ניגון.\n• ״זמן הסתרת כפתורים״ – 1 עד 5 שניות.\n• ״לחיצה ארוכה = כפול 2״ – מפעילה/מבטלת את מחוות כפול 2.\n• ״נעילת כפול 2 בהחלקה למטה״ – מפעילה/מבטלת את נעילת כפול 2.\n• ״הפעל סרטון אוטומטית במעבר לפריט״ – קובעת אם סרטון חדש יתחיל מיד.\n• ״אנימציית מעבר בין סרטונים״ – מפעילה/מבטלת את אנימציית המעבר.\n• ״הצג פס זמן הסרטון״ – מציג/מסתיר את פס הזמן. גם כשהוא מוסתר, אפשר לגרור באזור התחתון כדי לחשוף אותו זמנית.\n\n"+
             "🎨 צבעי האפליקציה\n• אפשר לבחור צבע מוכן או צבע מותאם אישית.\n• צבע מותאם מאפשר לשנות גוון ואטימות.\n• בצבעים בהירים הכיתוב מותאם אוטומטית לניגודיות.\n\n"+
-            "⏸️ יציאה מהאפליקציה\n• ביציאה מהאפליקציה הסרטון נעצר והנגן משתחרר.\n• בחזרה לאפליקציה הסרטון לא ממשיך לבד; אפשר להפעיל אותו בלחיצה.\n\n"+
+            "⏸️ יציאה מהאפליקציה\n• ביציאה מהאפליקציה הסרטון נעצר ונשמר המיקום האחרון.\n• בחזרה לנגן מופיע סמל ▶ במרכז; לחיצה עליו ממשיכה מאותה נקודה.\n\n"+
             "🖼️ תמונות וסרטונים\n• הפיד תומך בתמונות ובסרטונים מהתיקיות שבחרת.\n• סרטונים מציגים פס זמן כשהאפשרות פעילה.\n\n"+
             "ℹ️ אודות\nטיק דוס • YB Apps\n\nגרסה v0.1"
         );
@@ -840,12 +843,17 @@ public class MainActivity extends Activity implements TextureView.SurfaceTexture
     }
 
     void deleteMediaUri(Uri u) throws Exception {
+        Exception first=null;
         if (DocumentsContract.isDocumentUri(this,u)) {
-            if (!DocumentsContract.deleteDocument(getContentResolver(), u)) throw new IOException("delete failed");
-            return;
+            try { if(DocumentsContract.deleteDocument(getContentResolver(),u)) return; }
+            catch(Exception e){first=e;}
+            try { int rows=getContentResolver().delete(u,null,null); if(rows>0)return; }
+            catch(Exception e){if(first==null)first=e;}
+            if(first!=null)throw first;
+            throw new IOException("ספק הקבצים לא אפשר מחיקה");
         }
         int rows=getContentResolver().delete(u,null,null);
-        if(rows<=0) throw new IOException("delete failed");
+        if(rows<=0) throw new IOException("ספק המדיה לא אפשר מחיקה");
     }
 
     void toast(String s){Toast.makeText(this,s,Toast.LENGTH_SHORT).show();}
@@ -892,6 +900,8 @@ public class MainActivity extends Activity implements TextureView.SurfaceTexture
         speedLocked=false;
         stopSpeedIndicator();
         if(player!=null){
+            try{backgroundPlaybackPosition=Math.max(0,player.getCurrentPosition());}catch(Exception ignored){}
+            resumePrompt=(viewer!=null && viewer.getVisibility()==View.VISIBLE && isVideo());
             try{player.pause();}catch(Exception ignored){}
             try{player.setPlaybackParams(new PlaybackParams().setSpeed(1f));}catch(Exception ignored){}
             try{player.stop();}catch(Exception ignored){}
@@ -906,13 +916,11 @@ public class MainActivity extends Activity implements TextureView.SurfaceTexture
     @Override protected void onResume(){
         super.onResume();
         speedLocked=false;
-        // Returning to the app must keep the video paused; the user resumes it with a tap.
         resumeAfterBackground=false;
-        returningFromBackground=false;
-        if(player!=null){
-            try{player.setPlaybackParams(new PlaybackParams().setSpeed(1f));}catch(Exception ignored){}
-            startProgressUpdater();
-        }
-        hidePauseIndicator();
+        if(resumePrompt && viewer!=null && viewer.getVisibility()==View.VISIBLE && !items.isEmpty() && isVideo()){
+            movie.setTag(items.get(pos));
+            if(movie.isAvailable()) prepareVideo(items.get(pos),movie.getSurfaceTexture());
+            showResumeIndicator();
+        } else { returningFromBackground=false; if(player!=null){try{player.setPlaybackParams(new PlaybackParams().setSpeed(1f));}catch(Exception ignored){} startProgressUpdater();} }
     }
 }
