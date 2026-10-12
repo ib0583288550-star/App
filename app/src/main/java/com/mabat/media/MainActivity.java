@@ -899,9 +899,9 @@ public class MainActivity extends Activity implements TextureView.SurfaceTexture
         saveLastPosition();
         speedLocked=false;
         stopSpeedIndicator();
+        resumePrompt=(viewer!=null && viewer.getVisibility()==View.VISIBLE && isVideo());
         if(player!=null){
             try{backgroundPlaybackPosition=Math.max(0,player.getCurrentPosition());}catch(Exception ignored){}
-            resumePrompt=(viewer!=null && viewer.getVisibility()==View.VISIBLE && isVideo());
             try{player.pause();}catch(Exception ignored){}
             try{player.setPlaybackParams(new PlaybackParams().setSpeed(1f));}catch(Exception ignored){}
             try{player.stop();}catch(Exception ignored){}
