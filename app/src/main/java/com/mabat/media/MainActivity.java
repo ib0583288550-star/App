@@ -68,7 +68,8 @@ public class MainActivity extends Activity implements TextureView.SurfaceTexture
         picture=findViewById(R.id.picture); movie=findViewById(R.id.movie);
         share=findViewById(R.id.share); favorite=findViewById(R.id.favorite); if(share!=null){ share.setText(""); share.setCompoundDrawablesWithIntrinsicBounds(android.R.drawable.ic_menu_share,0,0,0); share.setCompoundDrawablePadding(0); }
         count=findViewById(R.id.count); status=findViewById(R.id.status); speed=findViewById(R.id.speed);
-        pauseIndicator=findViewById(R.id.pauseIndicator);\n        if(pauseIndicator!=null){pauseIndicator.setClickable(true);pauseIndicator.setFocusable(true);pauseIndicator.setOnClickListener(v->resumePlaybackFromIndicator());}
+        pauseIndicator=findViewById(R.id.pauseIndicator);
+        if(pauseIndicator!=null){pauseIndicator.setClickable(true);pauseIndicator.setFocusable(true);pauseIndicator.setOnClickListener(v->resumePlaybackFromIndicator());}
         seekBar=findViewById(R.id.seekBar); timeText=findViewById(R.id.timeText);
         likes=getSharedPreferences("likes",0);
         prefs=getSharedPreferences("settings",0);
