@@ -276,17 +276,113 @@ public class MainActivity extends Activity implements TextureView.SurfaceTexture
     void applyScreenAdaptation(){
         float density=getResources().getDisplayMetrics().density;
         float dpW=getResources().getDisplayMetrics().widthPixels/density;
-        float factor=dpW<340?0.82f:(dpW<380?0.90f:1f);
+        float dpH=getResources().getDisplayMetrics().heightPixels/density;
+        boolean compact=dpW<340f || dpH<700f;
+        float factor=dpW<300f?0.78f:(dpW<340f?0.84f:(dpW<380f?0.92f:1f));
+        if(dpH<650f) factor=Math.min(factor,0.78f);
+
         if(home!=null){
-            int pad=(int)(24*density*factor);
-            home.setPadding(pad,(int)(34*density*factor),pad,(int)(20*density*factor));
+            int side=(int)((compact?16:24)*density*factor);
+            int top=(int)((compact?22:34)*density*factor);
+            int bottom=(int)((compact?12:20)*density*factor);
+            home.setPadding(side,top,side,bottom);
+            android.view.ViewGroup.LayoutParams hp=home.getLayoutParams();
+            if(hp instanceof android.view.ViewGroup.MarginLayoutParams){
+                android.view.ViewGroup.MarginLayoutParams mp=(android.view.ViewGroup.MarginLayoutParams)hp;
+                mp.setMargins((int)(6*density),(int)(6*density),(int)(6*density),(int)(6*density));
+                home.setLayoutParams(mp);
+            }
+
             View logo=findViewById(R.id.appLogo);
-            if(logo!=null){int s=(int)(96*density*factor);logo.getLayoutParams().width=s;logo.getLayoutParams().height=s;logo.requestLayout();}
-            TextView title=findViewById(R.id.homeTitle); if(title!=null) title.setTextSize(30*factor);
-            TextView sub=findViewById(R.id.homeSubtitle); if(sub!=null) sub.setTextSize(16*factor);
+            if(logo!=null){
+                int s=(int)((compact?82:96)*density*factor);
+                android.view.ViewGroup.LayoutParams lp=logo.getLayoutParams();
+                lp.width=s; lp.height=s; logo.setLayoutParams(lp);
+                android.view.ViewGroup.LayoutParams lp2=logo.getLayoutParams();
+                if(lp2 instanceof android.view.ViewGroup.MarginLayoutParams){
+                    ((android.view.ViewGroup.MarginLayoutParams)lp2).bottomMargin=(int)(5*density);
+                    logo.setLayoutParams(lp2);
+                }
+            }
+            TextView title=findViewById(R.id.homeTitle);
+            if(title!=null) title.setTextSize((compact?27:30)*factor);
+            TextView sub=findViewById(R.id.homeSubtitle);
+            if(sub!=null){
+                sub.setTextSize((compact?13:16)*factor);
+                sub.setPadding(0,(int)(4*density),(int)(0),(int)((compact?10:20)*density*factor));
+            }
+            resizeView(R.id.add,-1,(int)((compact?48:56)*density*factor),0,(int)(7*density*factor));
+            resizeView(R.id.settings,-1,(int)((compact?44:50)*density*factor),0,(int)(7*density*factor));
+            resizeView(R.id.start,-1,(int)((compact?48:56)*density*factor),0,(int)(7*density*factor));
+            TextView st=findViewById(R.id.status);
+            if(st!=null){st.setTextSize((compact?13:15)*factor);st.setPadding(0,(int)((compact?12:20)*density*factor),0,0);}
+            TextView footer=findViewById(R.id.homeFooter);
+            if(footer!=null){footer.setTextSize((compact?10:12)*factor);android.view.ViewGroup.LayoutParams fp=footer.getLayoutParams();if(fp instanceof android.view.ViewGroup.MarginLayoutParams){((android.view.ViewGroup.MarginLayoutParams)fp).topMargin=(int)((compact?10:18)*density*factor);footer.setLayoutParams(fp);}}
         }
+
         View action=findViewById(R.id.actionColumn);
-        if(action!=null && factor<1f){ action.setScaleX(factor); action.setScaleY(factor); }
+        if(action!=null){
+            action.setScaleX(1f); action.setScaleY(1f);
+            android.view.ViewGroup.LayoutParams ap=action.getLayoutParams();
+            if(ap instanceof android.widget.LinearLayout.LayoutParams){
+                android.widget.LinearLayout.LayoutParams p=(android.widget.LinearLayout.LayoutParams)ap;
+                p.width=(int)((compact?50:64)*density*factor);
+                p.topMargin=(int)((compact?6:12)*density);
+                p.setMarginEnd((int)((compact?6:12)*density));
+                action.setLayoutParams(p);
+            }
+            for(int id:new int[]{R.id.share,R.id.favorite,R.id.lock}){
+                View v=findViewById(id);
+                if(v!=null){
+                    android.view.ViewGroup.LayoutParams p=v.getLayoutParams();
+                    p.width=(int)((compact?40:50)*density*factor);
+                    p.height=(int)((compact?40:50)*density*factor);
+                    if(p instanceof android.view.ViewGroup.MarginLayoutParams){
+                        ((android.view.ViewGroup.MarginLayoutParams)p).topMargin=(int)((compact?4:8)*density*factor);
+                    }
+                    v.setLayoutParams(p);
+                }
+            }
+        }
+        View back=findViewById(R.id.back);
+        if(back!=null){
+            android.view.ViewGroup.LayoutParams p=back.getLayoutParams();
+            p.width=p.height=(int)((compact?42:50)*density*factor);
+            back.setLayoutParams(p);
+            back.setTranslationX(compact?(-2*density):0f);
+        }
+        View countView=findViewById(R.id.count);
+        if(countView!=null) countView.setPadding((int)(6*density),(int)(compact?4*density:8*density),(int)(6*density),(int)(compact?4*density:8*density));
+        View info=findViewById(R.id.bottomInfo);
+        if(info!=null){
+            info.setPadding((int)((compact?12:18)*density),(int)(4*density),(int)((compact?12:18)*density),(int)((compact?14:22)*density));
+            if(info instanceof android.widget.LinearLayout){
+                android.widget.LinearLayout ll=(android.widget.LinearLayout)info;
+                for(int i=0;i<ll.getChildCount();i++){
+                    View child=ll.getChildAt(i);
+                    if(child instanceof TextView){
+                        TextView t=(TextView)child;
+                        t.setTextSize((compact?(i==0?15:12):(i==0?18:14))*factor);
+                    }
+                }
+            }
+        }
+        View time=findViewById(R.id.timeText);
+        if(time instanceof TextView) ((TextView)time).setTextSize(compact?10:11);
+    }
+
+    void resizeView(int id,int width,int height,int leftMargin,int topMargin){
+        View v=findViewById(id);
+        if(v==null)return;
+        android.view.ViewGroup.LayoutParams p=v.getLayoutParams();
+        if(width>=0)p.width=width;
+        if(height>=0)p.height=height;
+        if(p instanceof android.view.ViewGroup.MarginLayoutParams){
+            android.view.ViewGroup.MarginLayoutParams m=(android.view.ViewGroup.MarginLayoutParams)p;
+            if(leftMargin>=0)m.leftMargin=leftMargin;
+            if(topMargin>=0)m.topMargin=topMargin;
+        }
+        v.setLayoutParams(p);
     }
 
     void showOpeningAnimation(){
