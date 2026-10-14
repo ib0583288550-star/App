@@ -273,122 +273,118 @@ public class MainActivity extends Activity implements TextureView.SurfaceTexture
 
     void setControlsVisible(boolean visible){int v=visible?View.VISIBLE:View.GONE;findViewById(R.id.actionColumn).setVisibility(v);findViewById(R.id.bottomInfo).setVisibility(v);count.setVisibility(v);timeText.setVisibility(v);findViewById(R.id.back).setVisibility(v);seekBar.setVisibility(prefs.getBoolean("showSeekBar",true)?v:View.GONE);}
     void scheduleControlsHide(){if(!prefs.getBoolean("autoHide",true))return;handler.postDelayed(()->{if(player!=null&&player.isPlaying())setControlsVisible(false);},prefs.getInt("hideDelay",2)*1000L);}
+    // Responsive layout rebuilt from the measured app window, not the previous scaling logic.
     void applyScreenAdaptation(){
-        // Scale the home UI continuously from the available dp size, rather than
-        // switching between a few fixed device categories. Video stays fullscreen.
-        android.util.DisplayMetrics dm = getResources().getDisplayMetrics();
-        float density = dm.density;
-        float dpW = dm.widthPixels / density;
-        float dpH = dm.heightPixels / density;
-        float widthFactor = Math.max(0.78f, Math.min(1.16f, dpW / 392f));
-        float heightFactor = Math.max(0.82f, Math.min(1.08f, dpH / 780f));
-        float factor = Math.max(0.76f, Math.min(1.12f, Math.min(widthFactor, heightFactor)));
-        boolean compact = factor < 0.94f;
+        final View content = findViewById(android.R.id.content);
+        if(content == null) return;
+        content.post(() -> {
+            float density = getResources().getDisplayMetrics().density;
+            int pxW = content.getWidth();
+            int pxH = content.getHeight();
+            if(pxW <= 0 || pxH <= 0){
+                android.util.DisplayMetrics dm = getResources().getDisplayMetrics();
+                pxW = dm.widthPixels;
+                pxH = dm.heightPixels;
+            }
+            float widthDp = pxW / density;
+            float heightDp = pxH / density;
 
-        if(home != null){
-            int side = Math.round((24f * factor) * density);
-            int top = Math.round((34f * factor) * density);
-            int bottom = Math.round((20f * factor) * density);
-            home.setPadding(side, top, side, bottom);
-            android.view.ViewGroup.LayoutParams hp = home.getLayoutParams();
-            if(hp instanceof android.view.ViewGroup.MarginLayoutParams){
-                android.view.ViewGroup.MarginLayoutParams mp = (android.view.ViewGroup.MarginLayoutParams) hp;
-                int margin = Math.round(6f * density);
-                mp.setMargins(margin, margin, margin, margin);
-                home.setLayoutParams(mp);
-            }
+            // 392 x 780 dp is the reference layout. Scale continuously for any screen.
+            float widthScale = widthDp / 392f;
+            float heightScale = heightDp / 780f;
+            float scale = Math.max(0.76f, Math.min(1.12f, Math.min(widthScale, heightScale)));
+            int side = Math.round(24f * scale * density);
 
-            View logo = findViewById(R.id.appLogo);
-            if(logo != null){
-                int size = Math.round(96f * factor * density);
-                android.view.ViewGroup.LayoutParams lp = logo.getLayoutParams();
-                lp.width = size; lp.height = size; logo.setLayoutParams(lp);
-                if(lp instanceof android.view.ViewGroup.MarginLayoutParams){
-                    ((android.view.ViewGroup.MarginLayoutParams)lp).bottomMargin = Math.round(6f * factor * density);
-                    logo.setLayoutParams(lp);
-                }
-            }
-            TextView title = findViewById(R.id.homeTitle);
-            if(title != null) title.setTextSize(30f * factor);
-            TextView sub = findViewById(R.id.homeSubtitle);
-            if(sub != null){
-                sub.setTextSize(16f * factor);
-                sub.setPadding(0, Math.round(6f * factor * density), 0, Math.round(20f * factor * density));
-            }
-            resizeView(R.id.add, -1, Math.round(56f * factor * density), 0, Math.round(10f * factor * density));
-            resizeView(R.id.settings, -1, Math.round(50f * factor * density), 0, Math.round(10f * factor * density));
-            resizeView(R.id.start, -1, Math.round(56f * factor * density), 0, Math.round(10f * factor * density));
-            TextView st = findViewById(R.id.status);
-            if(st != null){
-                st.setTextSize(15f * factor);
-                st.setPadding(0, Math.round(20f * factor * density), 0, 0);
-            }
-            TextView footer = findViewById(R.id.homeFooter);
-            if(footer != null){
-                footer.setTextSize(12f * factor);
-                android.view.ViewGroup.LayoutParams fp = footer.getLayoutParams();
-                if(fp instanceof android.view.ViewGroup.MarginLayoutParams){
-                    ((android.view.ViewGroup.MarginLayoutParams)fp).topMargin = Math.round(18f * factor * density);
-                    footer.setLayoutParams(fp);
-                }
-            }
-        }
-
-        View action = findViewById(R.id.actionColumn);
-        if(action != null){
-            android.view.ViewGroup.LayoutParams ap = action.getLayoutParams();
-            if(ap instanceof android.widget.LinearLayout.LayoutParams){
-                android.widget.LinearLayout.LayoutParams p = (android.widget.LinearLayout.LayoutParams)ap;
-                p.width = Math.round(64f * factor * density);
-                p.topMargin = Math.round(12f * factor * density);
-                p.setMarginEnd(Math.round(12f * factor * density));
-                action.setLayoutParams(p);
-            }
-            for(int id : new int[]{R.id.share, R.id.favorite, R.id.lock}){
-                View v = findViewById(id);
-                if(v != null){
-                    android.view.ViewGroup.LayoutParams p = v.getLayoutParams();
-                    p.width = Math.round(50f * factor * density);
-                    p.height = Math.round(50f * factor * density);
+            if(home != null){
+                home.setPadding(side, Math.round(34f * scale * density), side,
+                    Math.round(20f * scale * density));
+                View logo = findViewById(R.id.appLogo);
+                if(logo != null){
+                    android.view.ViewGroup.LayoutParams p = logo.getLayoutParams();
+                    p.width = p.height = Math.round(96f * scale * density);
+                    logo.setLayoutParams(p);
                     if(p instanceof android.view.ViewGroup.MarginLayoutParams){
-                        ((android.view.ViewGroup.MarginLayoutParams)p).topMargin = Math.round(8f * factor * density);
+                        ((android.view.ViewGroup.MarginLayoutParams)p).bottomMargin = Math.round(6f * scale * density);
+                        logo.setLayoutParams(p);
                     }
-                    v.setLayoutParams(p);
                 }
-            }
-        }
-        View back = findViewById(R.id.back);
-        if(back != null){
-            android.view.ViewGroup.LayoutParams p = back.getLayoutParams();
-            p.width = p.height = Math.round(50f * factor * density);
-            back.setLayoutParams(p);
-        }
-        View countView = findViewById(R.id.count);
-        if(countView != null){
-            int horizontal = Math.round(6f * factor * density);
-            int vertical = Math.round(8f * factor * density);
-            countView.setPadding(horizontal, vertical, horizontal, vertical);
-            if(countView instanceof TextView) ((TextView)countView).setTextSize(14f * factor);
-        }
-        View info = findViewById(R.id.bottomInfo);
-        if(info != null){
-            info.setPadding(Math.round(18f * factor * density), Math.round(4f * factor * density),
-                Math.round(18f * factor * density), Math.round(22f * factor * density));
-            if(info instanceof android.widget.LinearLayout){
-                android.widget.LinearLayout ll = (android.widget.LinearLayout)info;
-                for(int i = 0; i < ll.getChildCount(); i++){
-                    View child = ll.getChildAt(i);
-                    if(child instanceof TextView){
-                        TextView t = (TextView)child;
-                        t.setTextSize((i == 0 ? 18f : 14f) * factor);
+                TextView title = findViewById(R.id.homeTitle);
+                if(title != null) title.setTextSize(30f * scale);
+                TextView subtitle = findViewById(R.id.homeSubtitle);
+                if(subtitle != null){
+                    subtitle.setTextSize(16f * scale);
+                    subtitle.setPadding(0, Math.round(6f * scale * density), 0, Math.round(20f * scale * density));
+                }
+                resizeView(R.id.add, -1, Math.round(56f * scale * density), 0, Math.round(10f * scale * density));
+                resizeView(R.id.settings, -1, Math.round(50f * scale * density), 0, Math.round(10f * scale * density));
+                resizeView(R.id.start, -1, Math.round(56f * scale * density), 0, Math.round(10f * scale * density));
+                TextView state = findViewById(R.id.status);
+                if(state != null){
+                    state.setTextSize(15f * scale);
+                    state.setPadding(0, Math.round(20f * scale * density), 0, 0);
+                }
+                TextView footer = findViewById(R.id.homeFooter);
+                if(footer != null){
+                    footer.setTextSize(12f * scale);
+                    android.view.ViewGroup.LayoutParams p = footer.getLayoutParams();
+                    if(p instanceof android.view.ViewGroup.MarginLayoutParams){
+                        ((android.view.ViewGroup.MarginLayoutParams)p).topMargin = Math.round(18f * scale * density);
+                        footer.setLayoutParams(p);
                     }
                 }
             }
-        }
-        View time = findViewById(R.id.timeText);
-        if(time instanceof TextView) ((TextView)time).setTextSize(11f * factor);
-        View seek = findViewById(R.id.seekBar);
-        if(seek != null) seek.setMinimumHeight(Math.round(30f * factor * density));
+
+            View action = findViewById(R.id.actionColumn);
+            if(action != null){
+                android.view.ViewGroup.LayoutParams p = action.getLayoutParams();
+                if(p instanceof android.widget.LinearLayout.LayoutParams){
+                    android.widget.LinearLayout.LayoutParams lp = (android.widget.LinearLayout.LayoutParams)p;
+                    lp.width = Math.round(64f * scale * density);
+                    lp.topMargin = Math.round(12f * scale * density);
+                    lp.setMarginEnd(Math.round(12f * scale * density));
+                    action.setLayoutParams(lp);
+                }
+                for(int id : new int[]{R.id.share, R.id.favorite, R.id.lock}){
+                    View item = findViewById(id);
+                    if(item != null){
+                        android.view.ViewGroup.LayoutParams lp = item.getLayoutParams();
+                        lp.width = lp.height = Math.round(50f * scale * density);
+                        if(lp instanceof android.view.ViewGroup.MarginLayoutParams)
+                            ((android.view.ViewGroup.MarginLayoutParams)lp).topMargin = Math.round(8f * scale * density);
+                        item.setLayoutParams(lp);
+                    }
+                }
+            }
+            View backButton = findViewById(R.id.back);
+            if(backButton != null){
+                android.view.ViewGroup.LayoutParams p = backButton.getLayoutParams();
+                p.width = p.height = Math.round(50f * scale * density);
+                backButton.setLayoutParams(p);
+            }
+            View countView = findViewById(R.id.count);
+            if(countView != null){
+                int padX = Math.round(6f * scale * density);
+                int padY = Math.round(8f * scale * density);
+                countView.setPadding(padX, padY, padX, padY);
+                if(countView instanceof TextView) ((TextView)countView).setTextSize(14f * scale);
+            }
+            View info = findViewById(R.id.bottomInfo);
+            if(info != null){
+                info.setPadding(Math.round(18f * scale * density), Math.round(4f * scale * density),
+                    Math.round(18f * scale * density), Math.round(22f * scale * density));
+                if(info instanceof android.widget.LinearLayout){
+                    android.widget.LinearLayout layout = (android.widget.LinearLayout)info;
+                    for(int i = 0; i < layout.getChildCount(); i++){
+                        View child = layout.getChildAt(i);
+                        if(child instanceof TextView) ((TextView)child).setTextSize((i == 0 ? 18f : 14f) * scale);
+                    }
+                }
+            }
+            View time = findViewById(R.id.timeText);
+            if(time instanceof TextView) ((TextView)time).setTextSize(11f * scale);
+            View seek = findViewById(R.id.seekBar);
+            if(seek != null) seek.setMinimumHeight(Math.round(30f * scale * density));
+        });
     }
 
     void resizeView(int id,int width,int height,int leftMargin,int topMargin){
