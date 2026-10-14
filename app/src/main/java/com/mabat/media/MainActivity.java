@@ -290,22 +290,23 @@ public class MainActivity extends Activity implements TextureView.SurfaceTexture
             float widthDp = pxW / density;
             float heightDp = pxH / density;
 
-            // 392 x 780 dp is the reference layout. Scale continuously for any screen.
+            // Keep controls readable on compact devices; adapt mainly to width.
+            // Short screens use scrolling/compact spacing rather than shrinking every element.
             float widthScale = widthDp / 392f;
-            float heightScale = heightDp / 780f;
-            float scale = Math.max(0.76f, Math.min(1.12f, Math.min(widthScale, heightScale)));
-            int side = Math.round(24f * scale * density);
+            float scale = Math.max(0.90f, Math.min(1.08f, widthScale));
+            float verticalScale = Math.max(0.82f, Math.min(1.0f, heightDp / 780f));
+            int side = Math.round(20f * scale * density);
 
             if(home != null){
-                home.setPadding(side, Math.round(34f * scale * density), side,
-                    Math.round(20f * scale * density));
+                home.setPadding(side, Math.round(26f * verticalScale * density), side,
+                    Math.round(14f * verticalScale * density));
                 View logo = findViewById(R.id.appLogo);
                 if(logo != null){
                     android.view.ViewGroup.LayoutParams p = logo.getLayoutParams();
-                    p.width = p.height = Math.round(96f * scale * density);
+                    p.width = p.height = Math.round(88f * scale * density);
                     logo.setLayoutParams(p);
                     if(p instanceof android.view.ViewGroup.MarginLayoutParams){
-                        ((android.view.ViewGroup.MarginLayoutParams)p).bottomMargin = Math.round(6f * scale * density);
+                        ((android.view.ViewGroup.MarginLayoutParams)p).bottomMargin = Math.round(4f * verticalScale * density);
                         logo.setLayoutParams(p);
                     }
                 }
@@ -314,7 +315,7 @@ public class MainActivity extends Activity implements TextureView.SurfaceTexture
                 TextView subtitle = findViewById(R.id.homeSubtitle);
                 if(subtitle != null){
                     subtitle.setTextSize(16f * scale);
-                    subtitle.setPadding(0, Math.round(6f * scale * density), 0, Math.round(20f * scale * density));
+                    subtitle.setPadding(0, Math.round(4f * verticalScale * density), 0, Math.round(14f * verticalScale * density));
                 }
                 resizeView(R.id.add, -1, Math.round(56f * scale * density), 0, Math.round(10f * scale * density));
                 resizeView(R.id.settings, -1, Math.round(50f * scale * density), 0, Math.round(10f * scale * density));
@@ -322,14 +323,14 @@ public class MainActivity extends Activity implements TextureView.SurfaceTexture
                 TextView state = findViewById(R.id.status);
                 if(state != null){
                     state.setTextSize(15f * scale);
-                    state.setPadding(0, Math.round(20f * scale * density), 0, 0);
+                    state.setPadding(0, Math.round(12f * verticalScale * density), 0, 0);
                 }
                 TextView footer = findViewById(R.id.homeFooter);
                 if(footer != null){
                     footer.setTextSize(12f * scale);
                     android.view.ViewGroup.LayoutParams p = footer.getLayoutParams();
                     if(p instanceof android.view.ViewGroup.MarginLayoutParams){
-                        ((android.view.ViewGroup.MarginLayoutParams)p).topMargin = Math.round(18f * scale * density);
+                        ((android.view.ViewGroup.MarginLayoutParams)p).topMargin = Math.round(12f * verticalScale * density);
                         footer.setLayoutParams(p);
                     }
                 }
