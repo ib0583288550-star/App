@@ -274,6 +274,7 @@ public class MainActivity extends Activity implements TextureView.SurfaceTexture
     void setControlsVisible(boolean visible){int v=visible?View.VISIBLE:View.GONE;findViewById(R.id.actionColumn).setVisibility(v);findViewById(R.id.bottomInfo).setVisibility(v);count.setVisibility(v);timeText.setVisibility(v);findViewById(R.id.back).setVisibility(v);seekBar.setVisibility(prefs.getBoolean("showSeekBar",true)?v:View.GONE);}
     void scheduleControlsHide(){if(!prefs.getBoolean("autoHide",true))return;handler.postDelayed(()->{if(player!=null&&player.isPlaying())setControlsVisible(false);},prefs.getInt("hideDelay",2)*1000L);}
     // Responsive layout rebuilt from the measured app window, not the previous scaling logic.
+    // Uses the actual laid-out content bounds after the window is measured.
     void applyScreenAdaptation(){
         final View content = findViewById(android.R.id.content);
         if(content == null) return;
