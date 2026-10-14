@@ -436,7 +436,6 @@ public class MainActivity extends Activity implements TextureView.SurfaceTexture
         CheckBox sp=new CheckBox(this);sp.setText("לחיצה ארוכה = כפול 2");sp.setChecked(prefs.getBoolean("longSpeed",true));
         CheckBox l=new CheckBox(this);l.setText("נעילת כפול 2 בהחלקה למטה");l.setChecked(prefs.getBoolean("speedLock",true));
         CheckBox ap=new CheckBox(this);ap.setText("הפעל סרטון אוטומטית במעבר לפריט");ap.setChecked(prefs.getBoolean("autoPlay",true));
-        CheckBox tr=new CheckBox(this);tr.setText("אנימציית מעבר בין סרטונים");tr.setChecked(prefs.getBoolean("transitionAnim",true));
         CheckBox sb=new CheckBox(this);sb.setText("הצג פס זמן הסרטון");sb.setChecked(prefs.getBoolean("showSeekBar",true));
         final AlertDialog[] settingsDialogRef=new AlertDialog[1];
         Button fav=new Button(this);fav.setText("⭐ מועדפים");fav.setAllCaps(false);fav.setOnClickListener(v->{if(settingsDialogRef[0]!=null)settingsDialogRef[0].dismiss();showFavoritesList();});
@@ -444,10 +443,10 @@ public class MainActivity extends Activity implements TextureView.SurfaceTexture
         Button guideBtn=new Button(this);guideBtn.setText("📖 מדריך והוראות");guideBtn.setAllCaps(false);guideBtn.setOnClickListener(v->{if(settingsDialogRef[0]!=null)settingsDialogRef[0].dismiss();showGuide();});
         Button aboutBtn=new Button(this);aboutBtn.setText("ℹ️ אודות");aboutBtn.setAllCaps(false);aboutBtn.setOnClickListener(v->{if(settingsDialogRef[0]!=null)settingsDialogRef[0].dismiss();showAbout();});
         Button hideDelay=new Button(this);hideDelay.setText("זמן הסתרת כפתורים: "+prefs.getInt("hideDelay",2)+" שניות");hideDelay.setAllCaps(false);hideDelay.setOnClickListener(v->{String[] opts={"1 שנייה","2 שניות","3 שניות","4 שניות","5 שניות"};new AlertDialog.Builder(this).setTitle("אחרי כמה זמן להסתיר?").setSingleChoiceItems(opts,prefs.getInt("hideDelay",2)-1,(d,w)->{prefs.edit().putInt("hideDelay",w+1).apply();hideDelay.setText("זמן הסתרת כפתורים: "+(w+1)+" שניות");d.dismiss();}).show();});
-        box.addView(a);box.addView(sp);box.addView(l);box.addView(ap);box.addView(tr);box.addView(sb);
+        box.addView(a);box.addView(sp);box.addView(l);box.addView(ap);box.addView(sb);
         box.addView(hideDelay);box.addView(fav);box.addView(colors);box.addView(guideBtn);box.addView(aboutBtn);
         settingsDialogRef[0]=new AlertDialog.Builder(this).setTitle("⚙ הגדרות טיק דוס").setView(box)
-            .setPositiveButton("שמור",(d,w)->prefs.edit().putBoolean("autoHide",a.isChecked()).putBoolean("longSpeed",sp.isChecked()).putBoolean("speedLock",l.isChecked()).putBoolean("autoPlay",ap.isChecked()).putBoolean("transitionAnim",tr.isChecked()).putBoolean("showSeekBar",sb.isChecked()).apply())
+            .setPositiveButton("שמור",(d,w)->prefs.edit().putBoolean("autoHide",a.isChecked()).putBoolean("longSpeed",sp.isChecked()).putBoolean("speedLock",l.isChecked()).putBoolean("autoPlay",ap.isChecked()).putBoolean("showSeekBar",sb.isChecked()).apply())
             .setNegativeButton("ביטול",null).create();
         settingsDialogRef[0].show();
     }
@@ -842,9 +841,10 @@ public class MainActivity extends Activity implements TextureView.SurfaceTexture
         if(items.isEmpty())return;
         hidePauseIndicator();
         releasePlayer();
-        if(prefs.getBoolean("transitionAnim",true)) viewer.setAlpha(0.92f); else viewer.setAlpha(1f);
-        viewer.setTranslationY(18f);
-        if(prefs.getBoolean("transitionAnim",true)) viewer.animate().alpha(1f).translationY(0f).setDuration(90).setInterpolator(new AccelerateDecelerateInterpolator()).start();
+        // Keep video changes immediate; transition animations are removed.
+        viewer.animate().cancel();
+        viewer.setAlpha(1f);
+        viewer.setTranslationY(0f);
         Uri u=items.get(pos); boolean vid=isVideoUri(u);
         movie.setVisibility(vid?View.VISIBLE:View.GONE); picture.setVisibility(vid?View.GONE:View.VISIBLE);
         if(vid){
@@ -922,7 +922,7 @@ public class MainActivity extends Activity implements TextureView.SurfaceTexture
             "🏠 מסך הבית\n• ״הוסף תיקיות״ – בוחר תיקייה מהמכשיר. אפשר להוסיף כמה תיקיות.\n• ״פתח את הפיד״ – סורק את התיקיות שבחרת ומציג את התמונות והסרטונים שנמצאו.\n• ״הגדרות״ – פותח את ההגדרות, המועדפים, הצבעים והמדריך.\n\n"+
             "🎬 צפייה בפיד\n• החלקה למעלה – פריט הבא.\n• החלקה למטה – פריט קודם.\n• לחיצה אחת – עצירה/המשך של סרטון והצגת הפקדים.\n• לחיצה כפולה באמצע המסך – הוספה או הסרה מהמועדפים.\n• לחיצה ארוכה בצד ימין או שמאל – כפול 2 בזמן ההחזקה.\n• בזמן כפול 2, החלקה למטה – נועלת את כפול 2. אותה מחווה שוב מבטלת את הנעילה.\n• כשהפקדים מוסתרים, נגיעה או החלקה באזור התחתון של פס הזמן חושפת אותו זמנית ומאפשרת לגרור לזמן הרצוי.\n• כפתור החזרה – חוזר למסך הבית.\n• כפתור השיתוף – משתף את הפריט שמוצג כרגע.\n• כוכב – מוסיף/מסיר את הפריט מהמועדפים.\n• כפתור המחיקה – מוחק את הפריט מהמכשיר וגם מסיר אותו מהמועדפים.\n\n"+
             "⭐ מועדפים\n• בתוך ״הגדרות״ יש כפתור ״מועדפים״.\n• רשימת המועדפים מציגה שם ותמונה ממוזערת של כל פריט.\n• לחיצה על פריט פותחת אותו בנגן.\n• כפתור המחיקה בתוך רשימת המועדפים מסיר את הפריט מהמועדפים בלבד; הוא לא מוחק את הקובץ מהמכשיר.\n• אפשר לנהל מועדפים גם דרך כפתור הכוכב בנגן או בלחיצה כפולה באמצע המסך.\n\n"+
-            "⚙️ הגדרות\n• ״הסתרת כפתורים אוטומטית״ – קובעת אם הפקדים ייעלמו בזמן ניגון.\n• ״זמן הסתרת כפתורים״ – 1 עד 5 שניות.\n• ״לחיצה ארוכה = כפול 2״ – מפעילה/מבטלת את מחוות כפול 2.\n• ״נעילת כפול 2 בהחלקה למטה״ – מפעילה/מבטלת את נעילת כפול 2.\n• ״הפעל סרטון אוטומטית במעבר לפריט״ – קובעת אם סרטון חדש יתחיל מיד.\n• ״אנימציית מעבר בין סרטונים״ – מפעילה/מבטלת את אנימציית המעבר.\n• ״הצג פס זמן הסרטון״ – מציג/מסתיר את פס הזמן. גם כשהוא מוסתר, אפשר לגרור באזור התחתון כדי לחשוף אותו זמנית.\n\n"+
+            "⚙️ הגדרות\n• ״הסתרת כפתורים אוטומטית״ – קובעת אם הפקדים ייעלמו בזמן ניגון.\n• ״זמן הסתרת כפתורים״ – 1 עד 5 שניות.\n• ״לחיצה ארוכה = כפול 2״ – מפעילה/מבטלת את מחוות כפול 2.\n• ״נעילת כפול 2 בהחלקה למטה״ – מפעילה/מבטלת את נעילת כפול 2.\n• ״הפעל סרטון אוטומטית במעבר לפריט״ – קובעת אם סרטון חדש יתחיל מיד.\n• ״הצג פס זמן הסרטון״ – מציג/מסתיר את פס הזמן. גם כשהוא מוסתר, אפשר לגרור באזור התחתון כדי לחשוף אותו זמנית.\n\n"+
             "🎨 צבעי האפליקציה\n• אפשר לבחור צבע מוכן או צבע מותאם אישית.\n• צבע מותאם מאפשר לשנות גוון ואטימות.\n• בצבעים בהירים הכיתוב מותאם אוטומטית לניגודיות.\n\n"+
             "⏸️ יציאה מהאפליקציה\n• ביציאה מהאפליקציה הסרטון נעצר ונשמר המיקום האחרון.\n• בחזרה לנגן מופיע סמל ▶ במרכז; לחיצה עליו ממשיכה מאותה נקודה.\n\n"+
             "🖼️ תמונות וסרטונים\n• הפיד תומך בתמונות ובסרטונים מהתיקיות שבחרת.\n• סרטונים מציגים פס זמן כשהאפשרות פעילה.\n\n"+
